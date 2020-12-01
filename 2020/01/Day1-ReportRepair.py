@@ -25,10 +25,30 @@ def getProductOfPairAddingUpTo2020():
     return pair[0] * pair[1]
 
 
+def getThreeNumsAddingUpTo2020():
+    for i in range(0, len(inputNums)):
+        for j in range(i+1, len(inputNums)):
+            if inputNums[i] + inputNums[j] >= 2020:
+                continue
+            for k in range(j+1, len(inputNums)):
+                if inputNums[k] == 2020 - (inputNums[j] + inputNums[i]):
+                    return (inputNums[i], inputNums[j], inputNums[k])
+
+def getProductOfThreeNumsAddingUpTo2020():
+    nums = getThreeNumsAddingUpTo2020()
+    if not nums or len(nums) != 3:
+        raise ValueError("No such three numbers found")
+
+    return nums[0] * nums[1] * nums[2]
+
+
+
 
 def main():
     getInputNums()
     print(getProductOfPairAddingUpTo2020()) # 692916 (1582 * 438)
+    print(getProductOfThreeNumsAddingUpTo2020()) # 289270976 (688 * 514 * 818)
+
 
 if __name__ == '__main__':
     main()
