@@ -1,4 +1,5 @@
 import unittest
+import re
 
 INPUT_FILE = "input.txt"
 
@@ -16,32 +17,40 @@ def getInput():
     with open(INPUT_FILE, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
-            minFreq = ""
-            maxFreq = ""
-            pwChar = ""
-            password = ""
-            i = 0
+            # minFreq = ""
+            # maxFreq = ""
+            # pwChar = ""
+            # password = ""
+            # i = 0
 
-            while line[i].isdigit():
-                minFreq += str(line[i])
-                i += 1
-            while not line[i].isdigit():
-                i += 1
-            while line[i].isdigit():
-                maxFreq += str(line[i])
-                i += 1
-            while not line[i].isalpha():
-                i += 1
-            if line[i].isalpha():
-                pwChar = line[i]
-                i += 1
-            while not line[i].isalpha():
-                i += 1
-            while i < len(line) and line[i].isalpha():
-                password += line[i]
-                i += 1
+            # while line[i].isdigit():
+            #     minFreq += str(line[i])
+            #     i += 1
+            # while not line[i].isdigit():
+            #     i += 1
+            # while line[i].isdigit():
+            #     maxFreq += str(line[i])
+            #     i += 1
+            # while not line[i].isalpha():
+            #     i += 1
+            # if line[i].isalpha():
+            #     pwChar = line[i]
+            #     i += 1
+            # while not line[i].isalpha():
+            #     i += 1
+            # while i < len(line) and line[i].isalpha():
+            #     password += line[i]
+            #     i += 1
+
+            lineSplit = re.split('-|: | |\* |\n',line)
+            print(lineSplit)
+            minFreq = lineSplit[0]
+            maxFreq = lineSplit[1]
+            pwChar = lineSplit[2]
+            password = lineSplit[3]
             passwordPolicy = PasswordPolicy(int(minFreq), int(maxFreq), pwChar, password)
             passwordPolicies.append(passwordPolicy)
+
     return passwordPolicies
 
 
@@ -128,7 +137,7 @@ def main():
     print(getValidPasswordsCount(allPasswordPolicies))  # 636
 
     allPasswordPoliciesPart2 = getInputForPart2()
-    print(getValidPasswordsCountPos(allPasswordPoliciesPart2))  # 588
+    #print(getValidPasswordsCountPos(allPasswordPoliciesPart2))  # 588
 
 
 class PasswordPolicyTester(unittest.TestCase):
