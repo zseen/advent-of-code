@@ -17,9 +17,11 @@ def getNumPairAddingUpTo2020(inputNums):
     visitedNums = set()
 
     for num in allNums:
-        if 2020 - num in allNums and num not in visitedNums:
+        if 2020 - num in visitedNums:
             return (num, 2020 - num)
         visitedNums.add(num)
+
+    return None
 
 
 def getProductOfPairAddingUpTo2020(inputNums):
@@ -37,6 +39,7 @@ def getThreeNumsAddingUpTo2020(inputNums):
             for k in range(j + 1, len(inputNums)):
                 if inputNums[k] == 2020 - (inputNums[j] + inputNums[i]):
                     return (inputNums[i], inputNums[j], inputNums[k])
+    return None
 
 
 def getProductOfThreeNumsAddingUpTo2020(inputNums):
@@ -76,5 +79,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    unittest.main()
+    main()
+    # unittest.main()
