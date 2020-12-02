@@ -5,124 +5,47 @@ INPUT_FILE = "input.txt"
 
 
 class PasswordPolicy:
-    def __init__(self, frequencyMin, frequencyMax, char, password):
-        self.frequencyMin = frequencyMin
-        self.frequencyMax = frequencyMax
+    def __init__(self, firstNum, secondNum, char, password):
+        self.firstNum = firstNum
+        self.secondNum = secondNum
         self.char = char
         self.password = password
 
 
-def getInput():
+def getPasswordPolicies():
     passwordPolicies = []
     with open(INPUT_FILE, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
-            # minFreq = ""
-            # maxFreq = ""
-            # pwChar = ""
-            # password = ""
-            # i = 0
-
-            # while line[i].isdigit():
-            #     minFreq += str(line[i])
-            #     i += 1
-            # while not line[i].isdigit():
-            #     i += 1
-            # while line[i].isdigit():
-            #     maxFreq += str(line[i])
-            #     i += 1
-            # while not line[i].isalpha():
-            #     i += 1
-            # if line[i].isalpha():
-            #     pwChar = line[i]
-            #     i += 1
-            # while not line[i].isalpha():
-            #     i += 1
-            # while i < len(line) and line[i].isalpha():
-            #     password += line[i]
-            #     i += 1
-
-            lineSplit = re.split('-|: | |\*|\n', line) #first line looks ['15', '16', 'm', 'mhmjmzrmmlmmmmmm', '']
-            minFreq = lineSplit[0]
-            maxFreq = lineSplit[1]
+            line = line.strip()
+            lineSplit = re.split('-|: | |\n', line)
+            firstNum = lineSplit[0]
+            secondNum = lineSplit[1]
             pwChar = lineSplit[2]
             password = lineSplit[3]
-            passwordPolicy = PasswordPolicy(int(minFreq), int(maxFreq), pwChar, password)
+            passwordPolicy = PasswordPolicy(int(firstNum), int(secondNum), pwChar, password)
             passwordPolicies.append(passwordPolicy)
 
     return passwordPolicies
 
 
-def getValidPasswordsCount(allPasswordPolicies):
-    validPasswordsCount = 0
-    for pwpolicy in allPasswordPolicies:
-        if isPasswordValid(pwpolicy):
-            validPasswordsCount += 1
-    return validPasswordsCount
+def getValidPasswordsCount(allPasswordPolicies, validatorFunc):
+    validPasswordPoliciesCount = 0
+    for passwordPolicy in allPasswordPolicies:
+        if validatorFunc(passwordPolicy):
+            validPasswordPoliciesCount += 1
+    return validPasswordPoliciesCount
 
 
 def isPasswordValid(passwordPolicy: PasswordPolicy):
-    desiredCharCount = 0
-    for character in passwordPolicy.password:
-        if character == passwordPolicy.char:
-            desiredCharCount += 1
-
-    return passwordPolicy.frequencyMin <= desiredCharCount <= passwordPolicy.frequencyMax
+    desiredCharCount = passwordPolicy.password.count(passwordPolicy.char)
+    return passwordPolicy.firstNum <= desiredCharCount <= passwordPolicy.secondNum
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-class PasswordPolicyPos:
-    def __init__(self, firstPosition, secondPosition, char, password):
-        self.firstPosition = firstPosition
-        self.secondPosition = secondPosition
-        self.char = char
-        self.password = password
-
-
-def getInputForPart2():
-    passwordPolicies = []
-    with open(INPUT_FILE, "r") as inputFile:
-        lines = inputFile.readlines()
-        for line in lines:
-            # firstPosition = ""
-            # secondPosition = ""
-            # pwChar = ""
-            # password = ""
-            # i = 0
-            #
-            # while line[i].isdigit():
-            #     firstPosition += str(line[i])
-            #     i += 1
-            # while not line[i].isdigit():
-            #     i += 1
-            # while line[i].isdigit():
-            #     secondPosition += str(line[i])
-            #     i += 1
-            # while not line[i].isalpha():
-            #     i += 1
-            # if line[i].isalpha():
-            #     pwChar = line[i]
-            #     i += 1
-            # while not line[i].isalpha():
-            #     i += 1
-            # while i < len(line) and line[i].isalpha():
-            #     password += line[i]
-            #     i += 1
-
-            lineSplit = re.split('-|: | |\*|\n', line)  # first line looks ['15', '16', 'm', 'mhmjmzrmmlmmmmmm', '']
-            firstPosition = lineSplit[0]
-            secondPosition = lineSplit[1]
-            pwChar = lineSplit[2]
-            password = lineSplit[3]
-            passwordPolicy = PasswordPolicyPos(int(firstPosition), int(secondPosition), pwChar, password)
-            passwordPolicies.append(passwordPolicy)
-            
-    return passwordPolicies
-
-
-def isPasswordValidPos(passwordPolicy: PasswordPolicyPos):
-    firstPositionChar = passwordPolicy.password[passwordPolicy.firstPosition - 1]
-    secondPositionChar = passwordPolicy.password[passwordPolicy.secondPosition - 1]
+def isPasswordValidPos(passwordPolicy: PasswordPolicy):
+    firstPositionChar = passwordPolicy.password[passwordPolicy.firstNum - 1]
+    secondPositionChar = passwordPolicy.password[passwordPolicy.secondNum - 1]
 
     if firstPositionChar == secondPositionChar:
         return False
@@ -130,20 +53,10 @@ def isPasswordValidPos(passwordPolicy: PasswordPolicyPos):
     return (firstPositionChar == passwordPolicy.char or secondPositionChar == passwordPolicy.char)
 
 
-def getValidPasswordsCountPos(allPasswordPolicies):
-    validPasswordPoliciesCount = 0
-    for passwordPolicy in allPasswordPolicies:
-        if isPasswordValidPos(passwordPolicy):
-            validPasswordPoliciesCount += 1
-    return validPasswordPoliciesCount
-
-
 def main():
-    allPasswordPolicies = getInput()
-    print(getValidPasswordsCount(allPasswordPolicies))  # 636
-
-    allPasswordPoliciesPart2 = getInputForPart2()
-    print(getValidPasswordsCountPos(allPasswordPoliciesPart2))  # 588
+    allPasswordPolicies = getPasswordPolicies()
+    print(getValidPasswordsCount(allPasswordPolicies, isPasswordValid))  # 636
+    print(getValidPasswordsCount(allPasswordPolicies, isPasswordValidPos))  # 588
 
 
 class PasswordPolicyTester(unittest.TestCase):
@@ -153,17 +66,17 @@ class PasswordPolicyTester(unittest.TestCase):
         pwp2 = PasswordPolicy(1, 3, "b", "cdefg")
         pwp3 = PasswordPolicy(2, 9, "c", "ccccccccc")
         allPwPolicies = [pwp1, pwp2, pwp3]
-        self.assertEqual(2, getValidPasswordsCount(allPwPolicies))
+        self.assertEqual(2, getValidPasswordsCount(allPwPolicies, isPasswordValid))
 
     def test_getValidPasswordCountPos_valindAndInvalidGiven_oneValidFound(self):
         # [1-3 a: abcde, 1-3 b: cdefg, 2-9 c: ccccccccc]
-        pwp1 = PasswordPolicyPos(1, 3, "a", "abcde")
-        pwp2 = PasswordPolicyPos(1, 3, "b", "cdefg")
-        pwp3 = PasswordPolicyPos(2, 9, "c", "ccccccccc")
+        pwp1 = PasswordPolicy(1, 3, "a", "abcde")
+        pwp2 = PasswordPolicy(1, 3, "b", "cdefg")
+        pwp3 = PasswordPolicy(2, 9, "c", "ccccccccc")
         allPwPolicies = [pwp1, pwp2, pwp3]
-        self.assertEqual(1, getValidPasswordsCountPos(allPwPolicies))
+        self.assertEqual(1, getValidPasswordsCount(allPwPolicies, isPasswordValidPos))
 
 
 if __name__ == '__main__':
-    main()
-    # unittest.main()
+    # main()
+    unittest.main()
