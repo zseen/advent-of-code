@@ -12,7 +12,7 @@ class PasswordPolicy:
 
 
 def getInput():
-    passwords = []
+    passwordPolicies = []
     with open(INPUT_FILE, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
@@ -41,8 +41,8 @@ def getInput():
                 password += line[i]
                 i += 1
             passwordPolicy = PasswordPolicy(int(minFreq), int(maxFreq), pwChar, password)
-            passwords.append(passwordPolicy)
-    return passwords
+            passwordPolicies.append(passwordPolicy)
+    return passwordPolicies
 
 
 def getValidPasswordsCount(allPasswordPolicies):
@@ -72,7 +72,7 @@ class PasswordPolicyPos:
 
 
 def getInputForPart2():
-    passwords = []
+    passwordPolicies = []
     with open(INPUT_FILE, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
@@ -101,8 +101,8 @@ def getInputForPart2():
                 password += line[i]
                 i += 1
             passwordPolicy = PasswordPolicyPos(int(firstPosition), int(secondPosition), pwChar, password)
-            passwords.append(passwordPolicy)
-    return passwords
+            passwordPolicies.append(passwordPolicy)
+    return passwordPolicies
 
 
 def isPasswordValidPos(passwordPolicy: PasswordPolicyPos):
