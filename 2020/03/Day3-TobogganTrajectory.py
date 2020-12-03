@@ -3,12 +3,15 @@ import enum
 
 INPUT_FILE = "input.txt"
 
+
 class MapObject(enum.Enum):
     tree = "#"
     square = "."
 
 class Map:
-    def __init__(self):
+    def __init__(self, mostRightSteps, mostDownSteps):
+        self.mostRightSteps = mostRightSteps
+        self.mostDownSteps = mostDownSteps
         self.originalWidth = None
         self.originalLength = None
         self.originalMap = []
@@ -29,8 +32,8 @@ class Map:
         self.originalWidth = len(self.originalMap[0])
         self.originalLength = len(self.originalMap)
 
-        canGoInOneOriginalMap = self.originalWidth // 3
-        repeatNeeded = self.originalLength // canGoInOneOriginalMap
+        canGoInOneOriginalMap = self.originalWidth // self.mostRightSteps
+        repeatNeeded = self.originalLength // canGoInOneOriginalMap + 1
 
         for row in self.originalMap:
             self.repeatedMap.append(row * repeatNeeded)
@@ -55,8 +58,8 @@ def countTrees(map: Map):
     # print(map.repeatedMap[currentRow + 10][currentColumn + 30])
 
     while currentRow != map.originalLength - 1:
-        currentRow += 1
-        currentColumn += 3
+        currentRow += map.mostDownSteps
+        currentColumn += map.mostRightSteps
         currentCell = map.repeatedMap[currentRow][currentColumn]
         if currentCell == MapObject.tree.value:
             treeCount += 1
@@ -67,9 +70,28 @@ def countTrees(map: Map):
 
 
 def main():
-    map = Map()
-    map.getRepeatedMap()
-    print(countTrees(map))
+    multipliedTrees = 1
+    map1 = Map(1, 1)
+    map1.getRepeatedMap()
+    multipliedTrees *= countTrees(map1)
+
+    map2 = Map(3, 1)
+    map2.getRepeatedMap()
+    multipliedTrees *= (countTrees(map2))
+
+    map3 = Map(5, 1)
+    map3.getRepeatedMap()
+    multipliedTrees *= (countTrees(map3))
+
+    map4 = Map(7, 1)
+    map4.getRepeatedMap()
+    multipliedTrees *= (countTrees(map4))
+
+    map5 = Map(1, 2)
+    map5.getRepeatedMap()
+    multipliedTrees *= (countTrees(map5))
+
+    print(multipliedTrees)
 
 if __name__ == '__main__':
     main()
