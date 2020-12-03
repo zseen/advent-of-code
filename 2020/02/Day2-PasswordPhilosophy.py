@@ -17,8 +17,8 @@ def getPasswordPolicies():
     with open(INPUT_FILE, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
-            line = line.strip()
-            lineSplit = re.split('-|: | |\n', line)
+            line = line.strip('\n')
+            lineSplit = re.split('-|: | ', line)
             firstNum = lineSplit[0]
             secondNum = lineSplit[1]
             pwChar = lineSplit[2]
@@ -30,19 +30,15 @@ def getPasswordPolicies():
 
 
 def getValidPasswordsCount(allPasswordPolicies, validatorFunc):
-    validPasswordPoliciesCount = 0
-    for passwordPolicy in allPasswordPolicies:
-        if validatorFunc(passwordPolicy):
-            validPasswordPoliciesCount += 1
-    return validPasswordPoliciesCount
+    validPasswords = [password for password in allPasswordPolicies if validatorFunc(password)]
+    return len(validPasswords)
 
 
-def isPasswordValid(passwordPolicy: PasswordPolicy):
+def isPasswordValidCount(passwordPolicy: PasswordPolicy):
     desiredCharCount = passwordPolicy.password.count(passwordPolicy.char)
     return passwordPolicy.firstNum <= desiredCharCount <= passwordPolicy.secondNum
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 def isPasswordValidPos(passwordPolicy: PasswordPolicy):
     firstPositionChar = passwordPolicy.password[passwordPolicy.firstNum - 1]
     secondPositionChar = passwordPolicy.password[passwordPolicy.secondNum - 1]
@@ -55,7 +51,7 @@ def isPasswordValidPos(passwordPolicy: PasswordPolicy):
 
 def main():
     allPasswordPolicies = getPasswordPolicies()
-    print(getValidPasswordsCount(allPasswordPolicies, isPasswordValid))  # 636
+    print(getValidPasswordsCount(allPasswordPolicies, isPasswordValidCount))  # 636
     print(getValidPasswordsCount(allPasswordPolicies, isPasswordValidPos))  # 588
 
 
@@ -66,7 +62,7 @@ class PasswordPolicyTester(unittest.TestCase):
         pwp2 = PasswordPolicy(1, 3, "b", "cdefg")
         pwp3 = PasswordPolicy(2, 9, "c", "ccccccccc")
         allPwPolicies = [pwp1, pwp2, pwp3]
-        self.assertEqual(2, getValidPasswordsCount(allPwPolicies, isPasswordValid))
+        self.assertEqual(2, getValidPasswordsCount(allPwPolicies, isPasswordValidCount))
 
     def test_getValidPasswordCountPos_valindAndInvalidGiven_oneValidFound(self):
         # [1-3 a: abcde, 1-3 b: cdefg, 2-9 c: ccccccccc]
