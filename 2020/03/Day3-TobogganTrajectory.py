@@ -19,7 +19,6 @@ class StepsInDirections:
 class Map:
     def __init__(self, sourceFile):
         self.originalMap = self.getMap(sourceFile)
-        self.repeatedMap = []
 
     def getMap(self, sourceFile):
         originalMap = []
@@ -29,33 +28,18 @@ class Map:
                 originalMap.append(line.strip('\n'))
         return originalMap
 
-    def getRepeatedMap(self, stepsInDirections: StepsInDirections):
-        self.repeatedMap = []
-        if not self.originalMap:
-            raise ValueError("Map not found")
-
-        originalWidth = len(self.originalMap[0])
-        rowsCount = len(self.originalMap)
-
-        rightMovemenInOriginalMapCount = originalWidth // stepsInDirections.rightSteps
-        repeatNeeded = (rowsCount // rightMovemenInOriginalMapCount // stepsInDirections.downSteps) + 1
-
-        for row in self.originalMap:
-            self.repeatedMap.append(row * repeatNeeded)
-
-        return self.repeatedMap
-
 
 def countTrees(map: Map, stepsInDirections: StepsInDirections):
     treeCount = 0
     currentRow = 0
     currentColumn = 0
-    currentMap = map.getRepeatedMap(stepsInDirections)
-    bottomIndex = len(map.repeatedMap) - 1
+    currentMap = map.originalMap
+    bottomIndex = len(map.originalMap) - 1
+    mapWidth = len(currentMap[0])
 
     while currentRow != bottomIndex:
         currentRow += stepsInDirections.downSteps
-        currentColumn += stepsInDirections.rightSteps
+        currentColumn = (currentColumn + stepsInDirections.rightSteps) % mapWidth
         currentCell = currentMap[currentRow][currentColumn]
         if currentCell == MapObject.tree.value:
             treeCount += 1
