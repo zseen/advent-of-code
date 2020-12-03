@@ -2,6 +2,7 @@ import unittest
 import enum
 
 INPUT_FILE = "input.txt"
+TEST_INPUT_FILE = "inputPractice.txt"
 
 
 class MapObject(enum.Enum):
@@ -16,13 +17,13 @@ class StepsInDirections:
 
 
 class Map:
-    def __init__(self):
-        self.originalMap = self.getMap()
+    def __init__(self, sourceFile):
+        self.originalMap = self.getMap(sourceFile)
         self.repeatedMap = []
 
-    def getMap(self):
+    def getMap(self, sourceFile):
         originalMap = []
-        with open(INPUT_FILE, "r") as inputFile:
+        with open(sourceFile, "r") as inputFile:
             lines = inputFile.readlines()
             for line in lines:
                 originalMap.append(line.strip('\n'))
@@ -62,7 +63,7 @@ def countTrees(map: Map, stepsInDirections: StepsInDirections):
     return treeCount
 
 
-def getTreesCountWithDifferentDirections(map, allStepsInDirections):
+def getTreesCountProductWithDifferentDirections(map, allStepsInDirections):
     allTreesCombined = 1
     for stepsInDirections in allStepsInDirections:
         allTreesCombined *= countTrees(map, stepsInDirections)
@@ -71,15 +72,32 @@ def getTreesCountWithDifferentDirections(map, allStepsInDirections):
 
 
 def main():
-    map = Map()
+    mapFromInput = Map(INPUT_FILE)
     allWalkMethodsDirections = [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
     allStepsInDirections = []
     for walkMethodDirection in allWalkMethodsDirections:
         allStepsInDirections.append(StepsInDirections(walkMethodDirection[0], walkMethodDirection[1]))
 
-    print(countTrees(map, StepsInDirections(3, 1)))  # 270
-    print(getTreesCountWithDifferentDirections(map, allStepsInDirections))  # 2122848000
+    print(countTrees(mapFromInput, StepsInDirections(3, 1)))  # 270
+    print(getTreesCountProductWithDifferentDirections(mapFromInput, allStepsInDirections))  # 2122848000
+
+
+class TreesCountTester(unittest.TestCase):
+    def test_countTrees_3stepsRight1StepRight_correctTreesCountReturned(self):
+        mapFromInput = Map(TEST_INPUT_FILE)
+        treesCount = countTrees(mapFromInput, StepsInDirections(3, 1))
+        self.assertEqual(7, treesCount)
+
+    def test_getTreesCountProductWithDifferentDirections_multipleWalkingWays_correctTreesCountProductReturned(self):
+        mapFromInput = Map(TEST_INPUT_FILE)
+        allWalkMethodsDirections = [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
+        allStepsInDirections = []
+        for walkMethodDirection in allWalkMethodsDirections:
+            allStepsInDirections.append(StepsInDirections(walkMethodDirection[0], walkMethodDirection[1]))
+        treeCountsProduct = getTreesCountProductWithDifferentDirections(mapFromInput, allStepsInDirections)
+        self.assertEqual(336, treeCountsProduct)
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    unittest.main()
