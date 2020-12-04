@@ -7,6 +7,7 @@ INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 ALL_WALK_METHODS_DIRECTIONS = [SlopeGradient(1, 1), SlopeGradient(3, 1), SlopeGradient(5, 1), SlopeGradient(7, 1),
                                SlopeGradient(1, 2)]
+THREE_RIGHT_ONE_DOWN = SlopeGradient(3, 1)
 
 
 class MapObject(enum.Enum):
@@ -55,7 +56,6 @@ def main():
     mapLayout: List = createMap(INPUT_FILE)
     mapFromInput: Map = Map(mapLayout)
 
-    THREE_RIGHT_ONE_DOWN = SlopeGradient(3, 1)
     print(mapFromInput.countTrees(THREE_RIGHT_ONE_DOWN))  # 270
     print(getTreesCountProductWithDifferentDirections(mapFromInput))  # 2122848000
 
@@ -65,7 +65,6 @@ class TreesCountTests(unittest.TestCase):
         mapLayout = createMap(TEST_INPUT_FILE)
         mapFromInput = Map(mapLayout)
 
-        THREE_RIGHT_ONE_DOWN = SlopeGradient(3, 1)
         treesCount = mapFromInput.countTrees(THREE_RIGHT_ONE_DOWN)
         self.assertEqual(7, treesCount)
 
