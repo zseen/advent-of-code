@@ -10,7 +10,7 @@ PASSPORT_FIELDS_TO_ACCEPTABLE_VALUES = {"byr": '[1][9][2-9][0-9]|[2][0][0][1-2]'
                                         "eyr": '[2][0][2][0-9]|[2][0][3][0]',
                                         "hgt": '[1][5-8][0-9][c][m]|[1][9][0-3][c][m]|[5][9][i][n]|[6][0-9][i][n]|[7][0-6][i][n]',
                                         "hcl": '[#][0-9a-f]{6}', "ecl": '(amb)|(blu)|(brn)|(gry)|(grn)|(hzl)|(oth)',
-                                        "pid": '[0-9]{9}', "cid": '\s|.'}
+                                        "pid": '[0-9]{9}$', "cid": '\s|.'}
 
 
 P_F_T_A_V =  {"byr": (1920, 2002), "iyr": (2010, 2020),
@@ -168,8 +168,6 @@ def isPassportValidAlt(passport: dict):
 
 l = getInput()
 # print(l)
-c = getValidPassportsNum(l)  # 112 is too high
-print(c)
-
-v = getValidPassportsNumALTERNAIVE(l)  # 111 is correct
+v = getValidPassportsNum(l)
 print(v)
+
