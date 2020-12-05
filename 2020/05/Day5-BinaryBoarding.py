@@ -9,12 +9,12 @@ NUM_ROWS = 128
 NUM_COLUMNS = 8
 
 
-class RowPositions(Enum):
-    FRONT_ROW = "F"
-    BACK_ROW = "B"
+class Row(Enum):
+    FRONT = "F"
+    BACK = "B"
 
 
-class ColumnPositions(Enum):
+class Column(Enum):
     LEFT = "L"
     RIGHT = "R"
 
@@ -28,12 +28,11 @@ class Seat:
 
     def calculateRowNum(self):
         rowInformation = self.seatDirections[:len(self.seatDirections) - 3]
-        return self._findPosition(rowInformation, 0, NUM_ROWS - 1, RowPositions.FRONT_ROW, RowPositions.BACK_ROW)
+        return self._findPosition(rowInformation, 0, NUM_ROWS - 1, Row.FRONT.value, Row.BACK.value)
 
     def calculateColumnNum(self):
         columnInformation = self.seatDirections[len(self.seatDirections) - 3:]
-
-        return self._findPosition(columnInformation, 0, NUM_COLUMNS - 1, ColumnPositions.LEFT, ColumnPositions.RIGHT)
+        return self._findPosition(columnInformation, 0, NUM_COLUMNS - 1, Column.LEFT.value, Column.RIGHT.value)
 
     def calculateSeatID(self):
         if self.row is None:
@@ -45,15 +44,15 @@ class Seat:
         return self.row * 8 + self.column
 
     @staticmethod
-    def _findPosition(directions, lowerBound, upperBound, validDirectionSmaller, validDirectionGreater):
+    def _findPosition(directions, lowerBound, upperBound, lowerHalfValue, upperHalfValue):
         if not directions:
             raise ValueError("Seat directions is missing")
 
         for direction in directions:
             middle = (upperBound + lowerBound) // 2
-            if direction == validDirectionSmaller.value:
+            if direction == lowerHalfValue:
                 upperBound = middle
-            elif direction == validDirectionGreater.value:
+            elif direction == upperHalfValue:
                 lowerBound = middle + 1
 
         if lowerBound != upperBound:
