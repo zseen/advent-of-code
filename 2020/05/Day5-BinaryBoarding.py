@@ -97,12 +97,30 @@ def getAllSeats(allSeatsDirections: List):
         allSeats.append(Seat(seatDirection))
     return allSeats
 
+def getAllSeatIDs(allseats: List):
+    allSeatIDs = []
+    for seat in allseats:
+        allSeatIDs.append(seat.seatID)
+    return (allSeatIDs)
+
+def findMissingSeatID(allSeatIDs: List):
+    smallestSeatID = min(allSeatIDs)
+    allSeatIDsSet = set(allSeatIDs)
+
+    while True:
+        if smallestSeatID + 1 not in allSeatIDsSet:
+            return smallestSeatID + 1
+        smallestSeatID += 1
+
 def main():
     allSeatsDirections = getInput(INPUT_FILE)
     #FFFBBBFLLL
-    print(getHighestSeatID(getAllSeats(allSeatsDirections)))
+    #print(getHighestSeatID(getAllSeats(allSeatsDirections))) # 980
     # s = Seat("FFFBBBFLLL")
     # print(s.seatID)
+    allSeats = getAllSeats(allSeatsDirections)
+    print(sorted(getAllSeatIDs(allSeats)))
+    print(findMissingSeatID(getAllSeatIDs(allSeats))) # 607
 
 
 if __name__ == '__main__':
