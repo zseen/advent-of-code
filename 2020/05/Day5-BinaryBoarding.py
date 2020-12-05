@@ -5,13 +5,16 @@ from typing import List
 INPUT_FILE = "input.txt"
 SHORT_INPUT_FILE = "short_input.txt"
 
-ROWS_NUM = 128
-COLUMNS_NUM = 8
+NUM_ROWS = 128
+NUM_COLUMNS = 8
 
 
-class Positions(Enum):
+class RowPositions(Enum):
     FRONT_ROW = "F"
     BACK_ROW = "B"
+
+
+class ColumnPositions(Enum):
     LEFT = "L"
     RIGHT = "R"
 
@@ -24,46 +27,13 @@ class Seat:
         self.seatID = self.calculateSeatID()
 
     def calculateRowNum(self):
-        currentRowsNumUpperBound = ROWS_NUM - 1
-        currentRowsNumLowerBound = 0
-        if not self.seatDirections:
-            raise ValueError("Seat directions is missing")
-
-        seatDirectionForRow = self.seatDirections[:len(self.seatDirections) - 3]
-
-        # Positions ascend from FRONT_ROW to BACK_ROW
-        for char in seatDirectionForRow:
-            middle = (currentRowsNumUpperBound + currentRowsNumLowerBound) // 2
-            if char == Positions.FRONT_ROW.value:
-                currentRowsNumUpperBound = middle
-            elif char == Positions.BACK_ROW.value:
-                currentRowsNumLowerBound = middle + 1
-
-        if currentRowsNumLowerBound != currentRowsNumUpperBound:
-            raise ValueError("Problem with searching for the row number")
-
-        return currentRowsNumLowerBound
+        rowInformation = self.seatDirections[:len(self.seatDirections) - 3]
+        return self._findPosition(rowInformation, 0, NUM_ROWS - 1, RowPositions.FRONT_ROW, RowPositions.BACK_ROW)
 
     def calculateColumnNum(self):
-        currentColumnsNumUpperBound = COLUMNS_NUM - 1
-        currentColumnsNumLowerBound = 0
-        if not self.seatDirections:
-            raise ValueError("Seat directions is missing")
+        columnInformation = self.seatDirections[len(self.seatDirections) - 3:]
 
-        seatDirectionForColumn = self.seatDirections[len(self.seatDirections) - 3:]
-
-        # Positions ascend from LEFT to RIGHT
-        for char in seatDirectionForColumn:
-            middle = (currentColumnsNumUpperBound + currentColumnsNumLowerBound) // 2
-            if char == Positions.LEFT.value:
-                currentColumnsNumUpperBound = middle
-            elif char == Positions.RIGHT.value:
-                currentColumnsNumLowerBound = middle + 1
-
-        if currentColumnsNumLowerBound != currentColumnsNumUpperBound:
-            raise ValueError("Problem with searching for the column number")
-
-        return currentColumnsNumLowerBound
+        return self._findPosition(columnInformation, 0, NUM_COLUMNS - 1, ColumnPositions.LEFT, ColumnPositions.RIGHT)
 
     def calculateSeatID(self):
         if self.row is None:
@@ -73,6 +43,23 @@ class Seat:
             raise ValueError("Missing data for column")
 
         return self.row * 8 + self.column
+
+    @staticmethod
+    def _findPosition(directions, lowerBound, upperBound, validDirectionSmaller, validDirectionGreater):
+        if not directions:
+            raise ValueError("Seat directions is missing")
+
+        for direction in directions:
+            middle = (upperBound + lowerBound) // 2
+            if direction == validDirectionSmaller.value:
+                upperBound = middle
+            elif direction == validDirectionGreater.value:
+                lowerBound = middle + 1
+
+        if lowerBound != upperBound:
+            raise ValueError("Problem with searching for the seat location")
+
+        return lowerBound
 
 
 def getInput(inputFile):
@@ -84,10 +71,6 @@ def getInput(inputFile):
             line = line.strip("\n")
             allSeatsDirections.append(line)
     return allSeatsDirections
-
-
-def getHighestSeatID(allSeatsIDS: List[int]):
-    return max(allSeatsIDS)
 
 
 def getAllSeats(allSeatsDirections: List):
@@ -102,30 +85,31 @@ def getAllSeatIDs(allseats: List):
 
 
 def findMissingSeatID(allSeatIDs: List[int]):
-    smallestSeatID = min(allSeatIDs)
+    possibleMissingSeatID = min(allSeatIDs) + 1
     allSeatIDsSet = set(allSeatIDs)
 
     while True:
-        if smallestSeatID + 1 not in allSeatIDsSet:
-            return smallestSeatID + 1
-        smallestSeatID += 1
+        if possibleMissingSeatID not in allSeatIDsSet:
+            return possibleMissingSeatID
+        possibleMissingSeatID += 1
 
 
 def main():
     allSeatsDirections = getInput(INPUT_FILE)
     allSeats = getAllSeats(allSeatsDirections)
-    print(getHighestSeatID(getAllSeatIDs(allSeats)))  # 980
-    print(findMissingSeatID(getAllSeatIDs(allSeats)))  # 607
+    allSeatIDs = getAllSeatIDs(allSeats)
+    print(max(allSeatIDs))  # 980
+    print(findMissingSeatID(allSeatIDs))  # 607
 
 
 class SeatIDsTester(unittest.TestCase):
     def test_getHighestSeatID_shortInput_highestSeatIDReturned(self):
         allSeatsDirections = getInput(SHORT_INPUT_FILE)
-        self.assertEqual(820, getHighestSeatID(getAllSeatIDs(getAllSeats(allSeatsDirections))))
+        self.assertEqual(820, max(getAllSeatIDs(getAllSeats(allSeatsDirections))))
 
     def test_getHighestSeatID_originalLongInput_highestSeatIDReturned(self):
         allSeatsDirections = getInput(INPUT_FILE)
-        self.assertEqual(980, getHighestSeatID(getAllSeatIDs(getAllSeats(allSeatsDirections))))
+        self.assertEqual(980, max(getAllSeatIDs(getAllSeats(allSeatsDirections))))
 
     def test_findMissingSeatID_originalLongInput_missingSeatIDReturned(self):
         allSeatsDirections = getInput(INPUT_FILE)
