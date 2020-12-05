@@ -6,7 +6,7 @@ INPUT_FILE = "input.txt"
 TEST_INPUT_FILE_ONE = "test_input_part_1.txt"
 TEST_INPUT_FILE_TWO = "test_input_part_2.txt"
 
-PASSPORT_FIELDS_TO_ACCEPTABLE_REGEX_VALUES = {"byr": '19[2-9][0-9]|200[0-2]',
+PASSPORT_FIELDS_TO_VALID_REGEX_VALUES = {"byr": '19[2-9][0-9]|200[0-2]',
                                               "iyr": '201[0-9]|2020',
                                               "eyr": '202[0-9]|2030',
                                               "hgt": '1[5-8][0-9]cm|19[0-3]cm|59in|6[0-9]in|7[0-6]in',
@@ -33,24 +33,23 @@ def getInput(inputFile):
     return getAllPassportsWithFieldToData(dataForAllPassports)
 
 
-def createPassportWithFieldToData(rawPassport: List):
-    passportAllFieldsToData = dict()
+def createPassportDict(rawPassport: List):
+    passportDict = dict()
     for entry in rawPassport:
         entry = entry.split(':')
-        passportAllFieldsToData[entry[0]] = entry[1]
-    return passportAllFieldsToData
+        passportDict[entry[0]] = entry[1]
+    return passportDict
 
 
 def getAllPassportsWithFieldToData(rawPassportsCollection: List):
-    passportDicts = [createPassportWithFieldToData(rawPassport) for rawPassport in
-                     rawPassportsCollection]  # Inline, or easier to understand this way?
-    return passportDicts
+    return [createPassportDict(rawPassport) for rawPassport in
+                     rawPassportsCollection]
 
 
 def isPassportFormatValid(passport: dict):
     passportFields = set(passport.keys())
-    allPassportFields = set(PASSPORT_FIELDS_TO_ACCEPTABLE_REGEX_VALUES.keys())
-    return (allPassportFields - {COUNTRY_ID_FIELD}).issubset(passportFields)
+    allPossiblePassportFields = set(PASSPORT_FIELDS_TO_VALID_REGEX_VALUES.keys())
+    return (allPossiblePassportFields - {COUNTRY_ID_FIELD}).issubset(passportFields)
 
 
 def isPassportValid(passport: dict):
@@ -64,7 +63,7 @@ def isPassportValid(passport: dict):
 
 
 def isDataInFieldValid(data, field) -> bool:
-    pattern = PASSPORT_FIELDS_TO_ACCEPTABLE_REGEX_VALUES[field]
+    pattern = PASSPORT_FIELDS_TO_VALID_REGEX_VALUES[field]
     match = re.fullmatch(pattern, data)
     return match is not None
 
