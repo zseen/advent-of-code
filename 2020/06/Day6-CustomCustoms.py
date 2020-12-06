@@ -50,27 +50,41 @@ def getUniqueAnswersCountInAllGroups(allGroups: List[List]):
     return allUniqueAnswersCount
 
 
-def getAnswersCountEveryoneAgreedOn(allGroups: List[List]):
+def getAnswersEveryoneAgreedOnCount(allGroups: List[List]):
     allAgreedAnswers = 0
     for groupAnswer in allGroups:
-        if len(groupAnswer) == 1:
-            allAgreedAnswers += len(groupAnswer[0])
-        else:
-            firstStringInGroup = groupAnswer[0]
-            allStringInGroupNum = len(groupAnswer)
-            commonCharsNum = 0
-            for char in firstStringInGroup:
-                currCharCount = 0
-                for i in range(0, allStringInGroupNum):
-                    if char in groupAnswer[i]:
-                        currCharCount += 1
-                if currCharCount == allStringInGroupNum:
-                    commonCharsNum += 1
-            allAgreedAnswers += commonCharsNum
-
-
+        shortestStringInGroupAnswer = min(groupAnswer, key=len)
+        commonCharsNum = 0
+        for char in shortestStringInGroupAnswer:
+            isCharCommonInAllStrings = True
+            for i in range(0, len(groupAnswer)):
+                if char not in groupAnswer[i]:
+                    isCharCommonInAllStrings = False
+                    break
+            if isCharCommonInAllStrings:
+                commonCharsNum += 1
+        allAgreedAnswers += commonCharsNum
 
     return allAgreedAnswers
+
+
+def getAnswersEveryoneAgreedOnCount2(ga):
+    intersection = set(ga[0])
+    for i in range(1, len(ga)):
+        currentStringAsSet = intersection
+        nextStringAsSet = set(ga[i])
+        intersection = currentStringAsSet.intersection(nextStringAsSet)
+    return len(intersection)
+
+
+def getAll(allGroups: List[List]):
+    allAg =  0
+    for groupAnswer in allGroups:
+        allAg += getAnswersEveryoneAgreedOnCount2(groupAnswer)
+    return allAg
+
+
+
 
 
 
@@ -83,14 +97,18 @@ v = getInput(TEST_INPUT)
 
 b = getInputSecondPart(TEST_INPUT)
 c = getInputSecondPart(INPUT_FILE)
-print(b)
+#print(b)
 #print(c)
 
-print(getAnswersCountEveryoneAgreedOn(b))
-print(getAnswersCountEveryoneAgreedOn(c)) # 3225 is too high 3128 too high
+#print(getAnswersEveryoneAgreedOnCount(b))
+#print(getAnswersEveryoneAgreedOnCount(c)) # 3225 is too high 3128 too high  3050!!!!
+
+#print(getAnswersEveryoneAgreedOnCount2(c))
+print(getAll(c))
+
 
 #print(getAnswersCountEveryoneAgreedOn([c[0]]))
-print(getAnswersCountEveryoneAgreedOn([['e', 'e', 'e', 'e']])) #1
-print(getAnswersCountEveryoneAgreedOn([ ['pfyh', 'hyf', 'dhfy']])) #3
-print(getAnswersCountEveryoneAgreedOn([['dqbpwhoar', 'pqohgd']])) #5
-print(getAnswersCountEveryoneAgreedOn([['sakhxnu', 'cdowx', 'xlj', 'lnxh', 'njxhf']])) #1
+#print(getAnswersCountEveryoneAgreedOn([['e', 'e', 'e', 'e']])) #1
+#print(getAnswersCountEveryoneAgreedOn([ ['pfyh', 'hyf', 'dhfy']])) #3
+#print(getAnswersCountEveryoneAgreedOn([['dqbpwhoar', 'pqohgd']])) #5
+#print(getAnswersCountEveryoneAgreedOn([['sakhxnu', 'cdowx', 'xlj', 'lnxh', 'njxhf']])) #1
