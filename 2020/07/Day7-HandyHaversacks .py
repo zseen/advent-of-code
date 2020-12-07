@@ -4,6 +4,7 @@ from collections import deque
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
+TEST_INPUT_FILE_SECOND_PART = "test_input_part2.txt"
 SHINY_GOLD = "shiny gold"
 
 
@@ -99,16 +100,51 @@ def getAllBagsContainingTargetDirectlyOrIndirectly(targetColour, allBagsToConten
                         matches.add(bag)
                         bagsToVisit.appendleft(bag)
 
-
-
     return len(matches)
 
-v = getInput(INPUT_FILE)
+
+def countAllBagsInsideTargetBag(targetColour, allBagsToContent: AllBagsToContent):
+    targetBag = getBagByColour(targetColour, allBagsToContent)
+    allBags = allBagsToContent.allBagsToContent
+
+    def cost(bag, thisQuantity):
+        costy = thisQuantity
+        for nodeData in bag.content:
+            for colour, quantity in nodeData.items():
+                nextBag = getBagByColour(colour, allBagsToContent)
+                costy += cost(nextBag, thisQuantity * quantity)
+        return costy
+
+    return cost(targetBag, 1) - 1
+
+
+
+
+def getEmptyBags(allBagsToContent: AllBagsToContent):
+    allEmpty = []
+    for bag in allBagsToContent.allBagsToContent:
+        if allBagsToContent.allBagsToContent[bag] == []:
+            allEmpty.append(bag)
+    return allEmpty
+
+
+t1 = getInput(TEST_INPUT_FILE)
+t2 = getInput(TEST_INPUT_FILE_SECOND_PART)
+t3 = getInput(INPUT_FILE)
+
 
 target = SHINY_GOLD
-tb = getBagsContainingTargetDirectly(target, v)
-allContaining = getAllBagsContainingTargetDirectlyOrIndirectly(target, v)
-print(allContaining)
+
+allBagsCountInTarget = countAllBagsInsideTargetBag(target, t1)
+print(allBagsCountInTarget)
+allBagsCountInTarget2 = countAllBagsInsideTargetBag(target, t2)
+print(allBagsCountInTarget2)
+
+allBagsCoun3 = countAllBagsInsideTargetBag(target, t3)
+print(allBagsCoun3)
+
+
+
 
 
 
