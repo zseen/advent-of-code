@@ -4,6 +4,8 @@ from enum import Enum
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
+TEST_INPUT_FILE_SECOND_PART_FIRST = "test_input_second_part_1.txt"
+TEST_INPUT_FILE_SECOND_PART_SECOND = "test_input_second_part_2.txt"
 
 class Operation(Enum):
     JUMP = "jmp"
@@ -22,29 +24,37 @@ def followInstructions(instructions: List):
     if not instructions:
         raise ValueError("No insstructions to follow")
     currentInstruction = instructions[0]
+    nextInstructionOffset = 1
 
-    while True:
+    shouldTerminate = False
+
+    while not shouldTerminate:
+        shouldTerminate = currentInstruction == instructions[-1]
+        if currentInstruction.isFollowed:
+            break
+
+        currentInstructionIndex = instructions.index(currentInstruction)
         if currentInstruction.operation == Operation.NO_OPERATION.value:
-            if currentInstruction.isFollowed:
-                break
-            currentInstruction.isFollowed = True
-            currentInstructionIndex = instructions.index(currentInstruction)
-            currentInstruction = instructions[currentInstructionIndex % len(instructions) + 1]
-        if currentInstruction.operation == Operation.ACCELERATE.value:
-            if currentInstruction.isFollowed:
-                break
-            currentInstruction.isFollowed = True
+            pass
+        elif currentInstruction.operation == Operation.ACCELERATE.value:
             accelerator += int(currentInstruction.argument)
-            currentInstructionIndex = instructions.index(currentInstruction)
-            currentInstruction = instructions[currentInstructionIndex % len(instructions) + 1]
-        if currentInstruction.operation == Operation.JUMP.value:
-            if currentInstruction.isFollowed:
-                break
-            currentInstruction.isFollowed = True
-            currentInstructionIndex = instructions.index(currentInstruction)
-            currentInstruction = instructions[currentInstructionIndex % len(instructions) + int(currentInstruction.argument)]
+
+        elif currentInstruction.operation == Operation.JUMP.value:
+            nextInstructionOffset = int(currentInstruction.argument)
+
+        else:
+            raise ValueError("Unexpected instruction")
+
+        currentInstruction.isFollowed = True
+        currentInstruction = instructions[(currentInstructionIndex % (len(instructions) -1)) + nextInstructionOffset]
+        nextInstructionOffset = 1
+
 
     return accelerator
+
+
+#def getNextInstruction(currentInstruction):
+
 
 
 
@@ -63,11 +73,12 @@ def getInput(inputFile):
 
 
 
-# l = getInput(TEST_INPUT_FILE)
-#
-# accValue = followInstructions(l)
-# print(accValue)
+l = getInput(TEST_INPUT_FILE)
+accValue = followInstructions(l)
 
 instructions = getInput(INPUT_FILE)
-accValue = followInstructions(instructions)  # 1594
-print(accValue)
+accValue2 = followInstructions(instructions)  # 1594
+
+ins = getInput(TEST_INPUT_FILE_SECOND_PART_SECOND)
+acc = followInstructions(ins)
+print(accValue == 5, accValue2 == 1594, acc == 8)
