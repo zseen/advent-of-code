@@ -9,23 +9,23 @@ SHINY_GOLD = "shiny gold"
 
 
 class Bag:
-    def __init__(self, colour: str):
-        self.colour = colour
-        self.content: List[Dict[str:int]] = []
+    def __init__(self, color: str):
+        self.color = color
+        self.content: List[Dict[str, int]] = []
 
 
-class AllBagsToContent:
+class BagAnalyzer:
     def __init__(self, allBagsToContent):
         self.allBagsToContent = allBagsToContent
 
-    def getAllBagsContainingTargetColouredBagDirectlyOrIndirectly(self, targetColour):
-        bagsDirect: List[Bag] = self._getBagsContainingTargetDirectly(targetColour)
+    def getAllBagsContainingTargetColoredBagDirectlyOrIndirectly(self, targetcolor):
+        bagsContainingTargetDirectly: List[Bag] = self._getBagsContainingTargetDirectly(targetcolor)
 
-        bagsContainingTargetBag = set(bagsDirect)
+        bagsContainingTargetBagRecursively = set(bagsContainingTargetDirectly)
         bagsToVisit = deque()
         visitedBags = set()
 
-        for bag in bagsDirect:
+        for bag in bagsContainingTargetDirectly:
             bagsToVisit.appendleft(bag)
 
         while bagsToVisit:
@@ -33,38 +33,36 @@ class AllBagsToContent:
             for bag in self.allBagsToContent:
                 if bag not in visitedBags:
                     for bagContent in bag.content:
-                        if currentBag.colour in bagContent:
-                            bagsContainingTargetBag.add(bag)
+                        if currentBag.color in bagContent:
+                            bagsContainingTargetBagRecursively.add(bag)
                             bagsToVisit.appendleft(bag)
             visitedBags.add(currentBag)
 
-        return len(bagsContainingTargetBag)
+        return len(bagsContainingTargetBagRecursively)
 
-    def getBagByColour(self, colour):
+    def countAllBagsInsideTargetColoredBag(self, targetcolor):
+        targetBag = self._getBagBycolor(targetcolor)
+        return self._countBagsInsideBag(targetBag, 1) - 1
+
+    def _getBagBycolor(self, color):
         for bag in self.allBagsToContent:
-            if bag.colour == colour:
+            if bag.color == color:
                 return bag
-        raise ValueError("No bag with such colour found.")
+        raise ValueError("No bag with such color found.")
 
-    def countAllBagsInsideTargetColouredBag(self, targetColour):
-        targetBag = self.getBagByColour(targetColour)
+    def _countBagsInsideBag(self, bag, bagQuantity):
+        allBagsCount = bagQuantity
+        for nodeData in bag.content:
+            for color, quantity in nodeData.items():
+                nextBag = self._getBagBycolor(color)
+                allBagsCount += self._countBagsInsideBag(nextBag, bagQuantity * quantity)
+        return allBagsCount
 
-        def countBagsInsideBag(bag, bagQuantity):
-            allBagsCount = bagQuantity
-            for nodeData in bag.content:
-                for colour, quantity in nodeData.items():
-                    # The "self" part below looks bad
-                    nextBag = AllBagsToContent.getBagByColour(self, colour)
-                    allBagsCount += countBagsInsideBag(nextBag, bagQuantity * quantity)
-            return allBagsCount
-
-        return countBagsInsideBag(targetBag, 1) - 1
-
-    def _getBagsContainingTargetDirectly(self, targetBagColour):
+    def _getBagsContainingTargetDirectly(self, targetBagcolor):
         bagsContainingTargetDirectly = []
         for bag in self.allBagsToContent:
-            for bagColours in bag.content:
-                if targetBagColour in bagColours:
+            for bagcolors in bag.content:
+                if targetBagcolor in bagcolors:
                     bagsContainingTargetDirectly.append(bag)
         return bagsContainingTargetDirectly
 
@@ -76,68 +74,68 @@ def getInput(inputFile):
         for line in lines:
             line = line.strip("\n")
             line = line.split(" ")
-            mainBag = getAllBagsInsideBagFromLine(line)
+            mainBag = createBagFromLine(line)
             allBagsToContents[mainBag] = mainBag.content
 
     return allBagsToContents
 
 
-def getAllBagsInsideBagFromLine(line: List):
-    mainBagColour = " ".join(line[0:2])
-    mainBag = Bag(mainBagColour)
-    bagsInsideMainBagColourToQuantity = []
+def createBagFromLine(line: List):
+    mainBagcolor = " ".join(line[0:2])
+    mainBag = Bag(mainBagcolor)
+    bagsInsideMainBagcolorToQuantity = []
     quantity = 0
-    colour = None
-    for i in range(2, len(line)):
+    color = None
+    for i in range(4, len(line)):
         if i % 4 == 0:
             if line[i] == "no":
                 quantity = 0
             else:
                 quantity = int(line[i])
         elif i % 4 == 1:
-            colour = " ".join(line[i:i + 2])
-        if colour and quantity:
-            bagsInsideMainBagColourToQuantity.append({colour: quantity})
-        colour = None
+            color = " ".join(line[i:i + 2])
+        if color and quantity:
+            bagsInsideMainBagcolorToQuantity.append({color: quantity})
+        color = None
 
-    mainBag.content = bagsInsideMainBagColourToQuantity
+    mainBag.content = bagsInsideMainBagcolorToQuantity
     return mainBag
 
 
 def main():
     allBags = getInput(INPUT_FILE)
-    allBagsToContent = AllBagsToContent(allBags)
+    bagAnalyzer = BagAnalyzer(allBags)
     target = SHINY_GOLD
 
-    allBagsContainingTarget = allBagsToContent.getAllBagsContainingTargetColouredBagDirectlyOrIndirectly(target)
+    allBagsContainingTarget = bagAnalyzer.getAllBagsContainingTargetColoredBagDirectlyOrIndirectly(target)
     print(allBagsContainingTarget)  # 229
 
-    allBagsCountInTarget = allBagsToContent.countAllBagsInsideTargetColouredBag(target)
+    allBagsCountInTarget = bagAnalyzer.countAllBagsInsideTargetColoredBag(target)
     print(allBagsCountInTarget)  # 6683
 
 
 class BagsCounterTest(unittest.TestCase):
     def test_getAllBagsContainingTargetDirectlyOrIndirectly_correctBagsNumReturned(self):
         allBags = getInput(TEST_INPUT_FILE_SHORT)
-        allBagsToContent = AllBagsToContent(allBags)
-        targetColour = SHINY_GOLD
-        allBagsContainingTargetColouredBag = allBagsToContent.getAllBagsContainingTargetColouredBagDirectlyOrIndirectly(
-            targetColour)
-        self.assertEqual(4, allBagsContainingTargetColouredBag)
+        bagAnalyzer = BagAnalyzer(allBags)
+        targetcolor = SHINY_GOLD
+        numAllBagsContainingTargetColoredBag = bagAnalyzer.getAllBagsContainingTargetColoredBagDirectlyOrIndirectly(
+            targetcolor)
+        self.assertEqual(4, numAllBagsContainingTargetColoredBag)
 
-    def test_countAllBagsInsideTargetColouredBag_shorterInput_correctBagsInsideNumReturned(self):
+    def test_countAllBagsInsideTargetColoredBag_shorterInput_correctBagsInsideNumReturned(self):
         allBags = getInput(TEST_INPUT_FILE_SHORT)
-        allBagsToContent = AllBagsToContent(allBags)
-        targetColour = SHINY_GOLD
-        allBagsInsideTarget = allBagsToContent.countAllBagsInsideTargetColouredBag(targetColour)
-        self.assertEqual(32, allBagsInsideTarget)
+        bagAnalyzer = BagAnalyzer(allBags)
+        targetcolor = SHINY_GOLD
+        numAllBagsInsideTarget = bagAnalyzer.countAllBagsInsideTargetColoredBag(targetcolor)
+        self.assertEqual(32, numAllBagsInsideTarget)
 
-    def test_countAllBagsInsideTargetColouredBag_longerInput_correctBagsInsideNumReturned(self):
+    def test_countAllBagsInsideTargetColoredBag_longerInput_correctBagsInsideNumReturned(self):
         allBags = getInput(TEST_INPUT_FILE_LONG)
-        allBagsToContent = AllBagsToContent(allBags)
-        targetColour = SHINY_GOLD
-        allBagsInsideTarget = allBagsToContent.countAllBagsInsideTargetColouredBag(targetColour)
-        self.assertEqual(126, allBagsInsideTarget)
+        bagAnalyzer = BagAnalyzer(allBags)
+        targetcolor = SHINY_GOLD
+        numAllBagsInsideTarget = bagAnalyzer.countAllBagsInsideTargetColoredBag(targetcolor)
+        self.assertEqual(126, numAllBagsInsideTarget)
 
 
 if __name__ == '__main__':
