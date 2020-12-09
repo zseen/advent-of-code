@@ -1,7 +1,6 @@
 import unittest
 import re
 from typing import List
-import itertools
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE_ONE = "test_input_part_1.txt"
