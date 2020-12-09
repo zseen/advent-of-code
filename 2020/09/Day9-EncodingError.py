@@ -27,8 +27,32 @@ def findExceptionNum(nums, preambleLength):
     raise ValueError("No exception number found")
 
 
+def getContinuousNumsAddingUpToTarget(nums, target):
+    startIndex = 0
+    chunkLength = 0
+    currentSum = 0
+    numsToTry = []
 
-#def getPreambleNums(nums, preambleLength):
+    while chunkLength <= len(nums):
+        numsToTry = []
+        for i in range(startIndex, chunkLength):
+            numsToTry.append(nums[i])
+            currentSum = sum(numsToTry)
+            if currentSum == target:
+                return numsToTry
+            if currentSum > target:
+                startIndex += 1
+        chunkLength += 1
+
+
+    return numsToTry
+
+
+def getSumSmallestAndLargestNumInArray(array: List[int]):
+    return min(array) + max(array)
+
+
+
 
 
 def areAnyTwoNumsAddingUpToNum(numsContainer, num):
@@ -41,10 +65,33 @@ def areAnyTwoNumsAddingUpToNum(numsContainer, num):
 
 
 
-nums = getInput(TEST_INPUT_FILE)
-exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH_TEST)
-print(exceptionNum)
+#nums = getInput(TEST_INPUT_FILE)
+#exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH_TEST)
+#print(exceptionNum)
+
+#numsAddingUpToTarget = getContinuousNumsAddingUpToTarget(nums, exceptionNum)
+#print(numsAddingUpToTarget)
+#print("test: ", getSumSmallestAndLargestNumInArray(numsAddingUpToTarget))
 
 nums = getInput(INPUT_FILE)
 exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH)
-print(exceptionNum)
+#print(exceptionNum) # 2089807806
+numsAddingUpToTarget = getContinuousNumsAddingUpToTarget(nums, exceptionNum)
+print(numsAddingUpToTarget)
+
+#print(len(numsAddingUpToTarget))
+#firstNumInChunk = numsAddingUpToTarget[0]
+#print(firstNumInChunk)
+#print("indexOfFirstNumInChunk: ", nums.index(firstNumInChunk))
+
+testing = []
+for i in range(554, (554+17)):
+    testing.append(nums[i])
+
+#print(testing == numsAddingUpToTarget)
+#print(sum(testing)==sum(numsAddingUpToTarget)==exceptionNum)
+print("min: ", min(numsAddingUpToTarget))
+print("max: ", max(numsAddingUpToTarget))
+print("res: ", min(numsAddingUpToTarget) + max(numsAddingUpToTarget))
+
+print(getSumSmallestAndLargestNumInArray(numsAddingUpToTarget))
