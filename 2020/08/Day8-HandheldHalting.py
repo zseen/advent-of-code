@@ -14,16 +14,14 @@ class Operation(Enum):
 
 
 class Instruction:
-    def __init__(self, positionInProcess, operation, argument):
-        self.positionInProcess: int = positionInProcess
+    def __init__(self, operation: str, argument: int):
         self.operation: str = operation
-        self.argument: str = argument
+        self.argument: int = argument
 
 
 class TerminationOutcome:
-    def __init__(self, accelerationCount, isLoopDetected, isEndOfInstructionsReached):
-        self.accumulatorCount: int = accelerationCount
-        self.isLoopDetected: bool = isLoopDetected
+    def __init__(self, accumulatorCount: int, isEndOfInstructionsReached: bool):
+        self.accumulatorCount: int = accumulatorCount
         self.isEndOfInstructionsReached: bool = isEndOfInstructionsReached
 
 
@@ -36,60 +34,56 @@ def getTerminationConditions(instructions: List[Instruction]):
     if not instructions:
         raise ValueError("No instructions to follow")
 
-    currentInstruction = instructions[0]
+    currentInstructionIndex = 0
     executedInstructionsInProcess = set()
     shouldTerminate = False
-    isLoopDetected = False
 
     while not shouldTerminate:
-        shouldTerminate = currentInstruction == instructions[-1]
-
+        currentInstruction = instructions[currentInstructionIndex]
         if currentInstruction in executedInstructionsInProcess:
-            isLoopDetected = True
             break
 
-        currentInstructionIndex = currentInstruction.positionInProcess
         if currentInstruction.operation == Operation.NO_OPERATION.value:
-            nextInstructionPositionOffset = 1
+            currentInstructionIndex += 1
         elif currentInstruction.operation == Operation.ACCUMULATE.value:
-            accumulatorCount += int(currentInstruction.argument)
-            nextInstructionPositionOffset = 1
+            accumulatorCount += currentInstruction.argument
+            currentInstructionIndex += 1
         elif currentInstruction.operation == Operation.JUMP.value:
-            nextInstructionPositionOffset = int(currentInstruction.argument)
+            currentInstructionIndex += currentInstruction.argument
         else:
             raise ValueError("Unexpected instruction")
 
         executedInstructionsInProcess.add(currentInstruction)
-        currentInstruction = instructions[
-            (currentInstructionIndex % (len(instructions) - 1)) + nextInstructionPositionOffset]
+        shouldTerminate = currentInstructionIndex == len(instructions)
 
-    terminationState = TerminationOutcome(accumulatorCount, isLoopDetected, shouldTerminate)
-    return terminationState
+    return TerminationOutcome(accumulatorCount, shouldTerminate)
 
 
-def getAccumulatorCountWithFixedInstructionProcess(instructions: List[Instruction]):
-    originalInstructions = deepcopy(instructions)
-
+def getAccumulatorCountWithRepairedInstructionProcess(instructions: List[Instruction]):
     for i in range(0, len(instructions)):
-        if instructions[i].operation == Operation.JUMP.value:
-            instructions[i].operation = Operation.NO_OPERATION.value
-        elif instructions[i].operation == Operation.NO_OPERATION.value:
-            instructions[i].operation = Operation.JUMP.value
-        terminationState = getTerminationConditions(instructions)
+        modifiedInstructions = deepcopy(instructions)
+        if modifiedInstructions[i].operation == Operation.JUMP.value:
+            modifiedInstructions[i].operation = Operation.NO_OPERATION.value
+        elif modifiedInstructions[i].operation == Operation.NO_OPERATION.value:
+            modifiedInstructions[i].operation = Operation.JUMP.value
+        else:
+            continue
+
+        terminationState = getTerminationConditions(modifiedInstructions)
         if terminationState.isEndOfInstructionsReached:
             return terminationState.accumulatorCount
-        instructions[i] = deepcopy(originalInstructions)[i]
+
+    raise ValueError("No repairment was needed")
 
 
 def getInput(inputFile):
     instructionsLines = []
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
-        for i in range(0, len(lines)):
-            line = lines[i]
+        for line in lines:
             line = line.strip("\n")
             line = line.split(" ")
-            instruction = Instruction(i, line[0], line[1])
+            instruction = Instruction(line[0], int(line[1]))
             instructionsLines.append(instruction)
     return instructionsLines
 
@@ -99,9 +93,8 @@ def main():
     accumulatorCountInOneLoop = getAccumulatorCountInOneLoop(instructions)
     print(accumulatorCountInOneLoop)  # 1594
 
-    instructions = getInput(INPUT_FILE)
-    accumulatorIfTerminationFixed = getAccumulatorCountWithFixedInstructionProcess(instructions)
-    print(accumulatorIfTerminationFixed)  # 758
+    accumulatorCountIfTerminationRepaired = getAccumulatorCountWithRepairedInstructionProcess(instructions)
+    print(accumulatorCountIfTerminationRepaired)  # 758
 
 
 class AccumulatorCounter(unittest.TestCase):
@@ -110,12 +103,12 @@ class AccumulatorCounter(unittest.TestCase):
         accumulatorCount = getAccumulatorCountInOneLoop(instructions)
         self.assertEqual(5, accumulatorCount)
 
-    def test_getAccumulatorCountWithFixedInstructionProcess_loopingInstructions_correctCountReturned(self):
+    def test_getAccumulatorCountWithRepairedInstructionProcess_loopingInstructions_correctCountReturned(self):
         instructions = getInput(TEST_INPUT_FILE_LOOP)
-        accumulatorCount = getAccumulatorCountWithFixedInstructionProcess(instructions)
+        accumulatorCount = getAccumulatorCountWithRepairedInstructionProcess(instructions)
         self.assertEqual(8, accumulatorCount)
 
 
 if __name__ == '__main__':
-    main()
+    # main()
     unittest.main()
