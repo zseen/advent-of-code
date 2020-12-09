@@ -1,6 +1,7 @@
 import unittest
 import re
 from typing import List
+import itertools
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE_ONE = "test_input_part_1.txt"
@@ -18,19 +19,17 @@ COUNTRY_ID_FIELD = "cid"
 
 
 def getInput(inputFile):
-    dataForAllPassports = [[]]
-
     with open(inputFile, "r") as inputFile:
-        lines = inputFile.readlines()
-        for line in lines:
-            if line == "\n":
-                dataForAllPassports.append([])
-            else:
-                line = line.strip("\n")
-                lineSplit = re.split(' ', line)
-                dataForAllPassports[-1].extend(lineSplit)
+        allDataForRawPassports = inputFile.read()
+        allDataForRawPassports = allDataForRawPassports.split("\n\n")
 
-    return getAllPassportsWithFieldToData(dataForAllPassports)
+        allRawPassports = []
+        for rawPassports in allDataForRawPassports:
+            rawPassports = rawPassports.split()
+            allRawPassports.append(rawPassports)
+
+        return getAllPassportsWithFieldToData(allRawPassports)
+
 
 
 def createPassportDict(rawPassport: List):
