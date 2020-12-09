@@ -4,8 +4,9 @@ from typing import List
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 
-PREAMBLE_LENGTH_TEST = 5
 PREAMBLE_LENGTH = 25
+PREAMBLE_LENGTH_TEST = 5
+
 
 def getInput(inputFile):
     numbers = []
@@ -17,94 +18,78 @@ def getInput(inputFile):
     return numbers
 
 
-def findExceptionNum(nums, preambleLength):
-    preamble = nums[0: preambleLength]
-    for i in range(0, len(nums)):
-        if not areAnyTwoNumsAddingUpToNum(set(preamble), nums[i+preambleLength]):
-            return nums[i+preambleLength]
-        preamble = nums[i+1: 1+i + preambleLength]
+def getNumNotSumOfTwoPreviousNumsInContainer(nums: List[int], preambleLength: int):
+    for i in range(0, len(nums) - preambleLength):
+        preamble: List[int] = nums[i: i + preambleLength]
+        exceptionNumCandidate: int = nums[i + preambleLength]
+        if not areAnyTwoNumsInContainerAddingUpToTarget(preamble, exceptionNumCandidate):
+            return exceptionNumCandidate
 
     raise ValueError("No exception number found")
 
 
-# def getContinuousNumsAddingUpToTarget(nums, target):
-#     startIndex = 0
-#     chunkLength = 0
-#     numsToSum = []
-#
-#     while chunkLength <= len(nums):
-#         numsToSum = []
-#         for i in range(startIndex, chunkLength):
-#             numsToSum.append(nums[i])
-#             currentSum = sum(numsToSum)
-#             if currentSum == target:
-#                 return numsToSum
-#             if currentSum > target:
-#                 startIndex += 1
-#         chunkLength += 1
-#
-#
-#     return numsToSum
-
-def getChunkAddingUpToTarget(nums, target):
+def getChunkAddingUpToTarget(nums: List[int], target: int):
     upperIndex = 0
     startIndex = 0
-    numsToSum = []
     while upperIndex < len(nums):
-        numsToSum = nums[startIndex:upperIndex]
+        numsToSum = nums[startIndex: upperIndex]
         currentSum = sum(numsToSum)
         if currentSum == target:
             return numsToSum
         if currentSum > target:
             startIndex += 1
-        else:
-            upperIndex += 1
+            upperIndex -= 1
+        upperIndex += 1
 
-    return numsToSum
+    raise ValueError("No chunk in array to sum up to target.")
 
 
-
-def getSmallestAndLargestNumInArraySum(array: List[int]):
+def getSumSmallestAndLargestNumsInArray(array: List[int]):
+    if not array:
+        raise ValueError("Empty array received.")
     return min(array) + max(array)
 
 
-
-
-
-def areAnyTwoNumsAddingUpToNum(numsContainer, num):
+def areAnyTwoNumsInContainerAddingUpToTarget(numsContainer: List[int], target: int):
+    uniqueNumsInContainer = set(numsContainer)
     visitedNums = set()
-    for numCandidate in numsContainer:
-        if num - numCandidate in visitedNums:
+    for num in uniqueNumsInContainer:
+        if target - num in visitedNums:
             return True
-        visitedNums.add(numCandidate)
+        visitedNums.add(num)
     return False
 
 
+def main():
+    numbers = getInput(INPUT_FILE)
+    exceptionNum = getNumNotSumOfTwoPreviousNumsInContainer(numbers, PREAMBLE_LENGTH)
+    print(exceptionNum)  # 2089807806
 
-nums = getInput(TEST_INPUT_FILE)
-exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH_TEST)
-#print(exceptionNum)
-
-numsAddingUpToTarget = getChunkAddingUpToTarget(nums, exceptionNum)
-print(numsAddingUpToTarget)
-print("test: ", getSmallestAndLargestNumInArraySum(numsAddingUpToTarget))
-
-nums = getInput(INPUT_FILE)
-exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH)
-#print(exceptionNum) # 2089807806
-numsAddingUpToTarget = getChunkAddingUpToTarget(nums, exceptionNum)
-#print(numsAddingUpToTarget)
-
-#print(len(numsAddingUpToTarget))
-#firstNumInChunk = numsAddingUpToTarget[0]
-#print(firstNumInChunk)
-#print("indexOfFirstNumInChunk: ", nums.index(firstNumInChunk))
+    chunkWithContinuousItemsSumUpToTarget = getChunkAddingUpToTarget(numbers, exceptionNum)
+    sumSmallestAndLargestNumsInChunkSummingUpToTarget = getSumSmallestAndLargestNumsInArray(
+        chunkWithContinuousItemsSumUpToTarget)
+    print(sumSmallestAndLargestNumsInChunkSummingUpToTarget)  # 245848639
 
 
+class ExceptionNumberOperationsTester(unittest.TestCase):
+    def test_getNumNotSumOfTwoPreviousNumsInContainer_suchNumPresentInInput_correctNumReturned(self):
+        numbers = getInput(TEST_INPUT_FILE)
+        exceptionNum = getNumNotSumOfTwoPreviousNumsInContainer(numbers, PREAMBLE_LENGTH_TEST)
+        self.assertEqual(127, exceptionNum)
 
-#print(testing == numsAddingUpToTarget)
-#print(sum(testing)==sum(numsAddingUpToTarget)==exceptionNum)
+    def test_getSumSmallestAndLargestNumsInArray_correctSumReturned(self):
+        numbers = getInput(TEST_INPUT_FILE)
+        exceptionNum = getNumNotSumOfTwoPreviousNumsInContainer(numbers, PREAMBLE_LENGTH_TEST)
+        self.assertEqual(127, exceptionNum)
+
+        chunkWithContinuousItemsSumUpToTarget = getChunkAddingUpToTarget(numbers, exceptionNum)
+        self.assertEqual([15, 25, 47, 40], chunkWithContinuousItemsSumUpToTarget)
+
+        sumSmallestAndLargestNumsInChunkSummingUpToTarget = getSumSmallestAndLargestNumsInArray(
+            chunkWithContinuousItemsSumUpToTarget)
+        self.assertEqual(62, sumSmallestAndLargestNumsInChunkSummingUpToTarget)
 
 
-print("solution: ", getSmallestAndLargestNumInArraySum(numsAddingUpToTarget))
-print(getSmallestAndLargestNumInArraySum(numsAddingUpToTarget) == 245848639)
+if __name__ == '__main__':
+    # main()
+    unittest.main()
