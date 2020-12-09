@@ -57,8 +57,8 @@ def getChunkAddingUpToTarget(nums, target):
             return numsToSum
         if currentSum > target:
             startIndex += 1
-            upperIndex = startIndex
-        upperIndex += 1
+        else:
+            upperIndex += 1
 
     return numsToSum
 
