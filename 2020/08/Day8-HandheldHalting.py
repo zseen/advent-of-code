@@ -73,7 +73,7 @@ def getAccumulatorCountWithRepairedInstructionProcess(instructions: List[Instruc
         if terminationState.isEndOfInstructionsReached:
             return terminationState.accumulatorCount
 
-    raise ValueError("No repairment was needed")
+    raise ValueError("Could not be repaired.")
 
 
 def getInput(inputFile):
