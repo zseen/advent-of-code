@@ -27,28 +27,44 @@ def findExceptionNum(nums, preambleLength):
     raise ValueError("No exception number found")
 
 
-def getContinuousNumsAddingUpToTarget(nums, target):
+# def getContinuousNumsAddingUpToTarget(nums, target):
+#     startIndex = 0
+#     chunkLength = 0
+#     numsToSum = []
+#
+#     while chunkLength <= len(nums):
+#         numsToSum = []
+#         for i in range(startIndex, chunkLength):
+#             numsToSum.append(nums[i])
+#             currentSum = sum(numsToSum)
+#             if currentSum == target:
+#                 return numsToSum
+#             if currentSum > target:
+#                 startIndex += 1
+#         chunkLength += 1
+#
+#
+#     return numsToSum
+
+def getChunkAddingUpToTarget(nums, target):
+    upperIndex = 0
     startIndex = 0
-    chunkLength = 0
-    currentSum = 0
-    numsToTry = []
+    numsToSum = []
+    while upperIndex < len(nums):
+        numsToSum = nums[startIndex:upperIndex]
+        currentSum = sum(numsToSum)
+        if currentSum == target:
+            return numsToSum
+        if currentSum > target:
+            startIndex += 1
+            upperIndex = startIndex
+        upperIndex += 1
 
-    while chunkLength <= len(nums):
-        numsToTry = []
-        for i in range(startIndex, chunkLength):
-            numsToTry.append(nums[i])
-            currentSum = sum(numsToTry)
-            if currentSum == target:
-                return numsToTry
-            if currentSum > target:
-                startIndex += 1
-        chunkLength += 1
+    return numsToSum
 
 
-    return numsToTry
 
-
-def getSumSmallestAndLargestNumInArray(array: List[int]):
+def getSmallestAndLargestNumInArraySum(array: List[int]):
     return min(array) + max(array)
 
 
@@ -65,33 +81,30 @@ def areAnyTwoNumsAddingUpToNum(numsContainer, num):
 
 
 
-#nums = getInput(TEST_INPUT_FILE)
-#exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH_TEST)
+nums = getInput(TEST_INPUT_FILE)
+exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH_TEST)
 #print(exceptionNum)
 
-#numsAddingUpToTarget = getContinuousNumsAddingUpToTarget(nums, exceptionNum)
-#print(numsAddingUpToTarget)
-#print("test: ", getSumSmallestAndLargestNumInArray(numsAddingUpToTarget))
+numsAddingUpToTarget = getChunkAddingUpToTarget(nums, exceptionNum)
+print(numsAddingUpToTarget)
+print("test: ", getSmallestAndLargestNumInArraySum(numsAddingUpToTarget))
 
 nums = getInput(INPUT_FILE)
 exceptionNum = findExceptionNum(nums, PREAMBLE_LENGTH)
 #print(exceptionNum) # 2089807806
-numsAddingUpToTarget = getContinuousNumsAddingUpToTarget(nums, exceptionNum)
-print(numsAddingUpToTarget)
+numsAddingUpToTarget = getChunkAddingUpToTarget(nums, exceptionNum)
+#print(numsAddingUpToTarget)
 
 #print(len(numsAddingUpToTarget))
 #firstNumInChunk = numsAddingUpToTarget[0]
 #print(firstNumInChunk)
 #print("indexOfFirstNumInChunk: ", nums.index(firstNumInChunk))
 
-testing = []
-for i in range(554, (554+17)):
-    testing.append(nums[i])
+
 
 #print(testing == numsAddingUpToTarget)
 #print(sum(testing)==sum(numsAddingUpToTarget)==exceptionNum)
-print("min: ", min(numsAddingUpToTarget))
-print("max: ", max(numsAddingUpToTarget))
-print("res: ", min(numsAddingUpToTarget) + max(numsAddingUpToTarget))
 
-print(getSumSmallestAndLargestNumInArray(numsAddingUpToTarget))
+
+print("solution: ", getSmallestAndLargestNumInArraySum(numsAddingUpToTarget))
+print(getSmallestAndLargestNumInArraySum(numsAddingUpToTarget) == 245848639)
