@@ -1,4 +1,7 @@
 import unittest
+from typing import Dict
+from collections import defaultdict
+
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_SHORT = "test_input_short.txt"
@@ -30,12 +33,7 @@ def getResult(jolts):
             currentJoltage += 3
             usedJolts.add(jolts[currentJoltage])
 
-
     return oneDifferenceCounter * threeDifferenceCounter
-
-
-
-
 
 
 def getInput(inputFile):
@@ -49,17 +47,39 @@ def getInput(inputFile):
     return joltsValuesToJolts
 
 
+def countDistictWaysToArrangeAdapters(jolts):
+    joltages = list(jolts.keys())
+    joltages.sort()
+
+    maxJoltage = max(joltages)
+    memo = [0] * (maxJoltage + 1)
+
+    memo[0] = 1
+
+    for num in joltages:
+        memo[num] = memo[num-1] + memo[num-2] + memo[num-3]
 
 
+    return max(memo)
 
 jolts = getInput(TEST_INPUT_SHORT)
-res = getResult(jolts)
-print(res)
-print("----------")
+# res = getResult(jolts)
+# print(res)
+# print("----------")
+# jolts2 = getInput(TEST_INPUT_LONG)
+# res2 = getResult(jolts2)
+# print(res2)
+# print("----------")
+# jolts3 = getInput(INPUT_FILE)
+# res3 = getResult(jolts3)
+# print(res3)
+
+sj = countDistictWaysToArrangeAdapters(jolts)
+print(sj)
+
 jolts2 = getInput(TEST_INPUT_LONG)
-res2 = getResult(jolts2)
-print(res2)
-print("----------")
-jolts3 = getInput(INPUT_FILE)
-res3 = getResult(jolts3)
-print(res3)
+c = countDistictWaysToArrangeAdapters(jolts2)
+print(c)
+
+v = getInput(INPUT_FILE)
+print(countDistictWaysToArrangeAdapters(v))
