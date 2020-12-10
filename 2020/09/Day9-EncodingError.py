@@ -1,5 +1,5 @@
 import unittest
-from typing import List
+from typing import List, Text
 from collections import deque
 
 INPUT_FILE = "input.txt"
@@ -9,7 +9,7 @@ PREAMBLE_LENGTH = 25
 PREAMBLE_LENGTH_TEST = 5
 
 
-def getInput(inputFile):
+def getInput(inputFile: Text):
     numbers = []
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
@@ -40,7 +40,8 @@ def areAnyTwoNumsInContainerAddingUpToTarget(numsContainer: deque, target: int):
     return False
 
 
-def getEncryptionWeakness(array: List[int], invalidNumber: int):
+def getEncryptionWeakness(array: List[int], preambleLength: int):
+    invalidNumber = getInvalidNumberInProcess(array, preambleLength)
     chunk = getChunkAddingUpToTarget(array, invalidNumber)
     if not chunk:
         raise ValueError("Empty chunk returned.")
@@ -81,15 +82,10 @@ class ExceptionNumberOperationsTester(unittest.TestCase):
 
     def test_getEncryptionWeakness_correctResultReturned(self):
         numbers = getInput(TEST_INPUT_FILE)
-        invalidNum = getInvalidNumberInProcess(numbers, PREAMBLE_LENGTH_TEST)
-
-        chunk = getChunkAddingUpToTarget(numbers, invalidNum)
-        self.assertEqual([15, 25, 47, 40], chunk)
-
-        encryptionWeakness = getEncryptionWeakness(numbers, invalidNum)
+        encryptionWeakness = getEncryptionWeakness(numbers, PREAMBLE_LENGTH_TEST)
         self.assertEqual(62, encryptionWeakness)
 
 
 if __name__ == '__main__':
-    main()
+    # main()
     unittest.main()
