@@ -1,85 +1,83 @@
 import unittest
-from typing import Dict
-from collections import defaultdict
-
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_SHORT = "test_input_short.txt"
 TEST_INPUT_LONG = "test_input_long.txt"
-JOLTAGE_DIFFERENCE_MAX = 3
 
 
-class Jolt:
-    def __init__(self, joltage: int):
-        self.joltage: int = joltage
-
-
-def getResult(jolts):
-    oneDifferenceCounter = 0
-    threeDifferenceCounter = 1
-    currentJoltage = 0
-    usedJolts = set()
-
-    while currentJoltage != max(list(jolts.keys())):
-        if currentJoltage + 1 in jolts:
-            oneDifferenceCounter += 1
-            currentJoltage += 1
-            usedJolts.add(jolts[currentJoltage])
-        elif currentJoltage + 2 in jolts:
-            currentJoltage += 2
-            usedJolts.add(jolts[currentJoltage])
-        elif currentJoltage + 3 in jolts:
-            threeDifferenceCounter += 1
-            currentJoltage += 3
-            usedJolts.add(jolts[currentJoltage])
-
-    return oneDifferenceCounter * threeDifferenceCounter
-
-
-def getInput(inputFile):
-    joltsValuesToJolts = dict()
+def getJolts(inputFile):
+    jolts = []
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
             line = line.strip("\n")
-            jolt = Jolt(int(line))
-            joltsValuesToJolts[jolt.joltage] = jolt
-    return joltsValuesToJolts
+            jolts.append(int(line))
+    return jolts
+
+
+def getJoltageDifferenceCountersProduct(jolts):
+    if not jolts:
+        raise ValueError("No adapters found.")
+
+    numAdaptersWithOneJoltageDifference = 0
+    # Initialise with one, as the own joltage adapter is 3 larger than the largest adapter from 'jolts'
+    numAdaptersWithThreeJoltageDifference = 1
+    currentJoltage = 0
+    joltsSet = set(jolts)
+
+    while currentJoltage != max(jolts):
+        if currentJoltage + 1 in joltsSet:
+            numAdaptersWithOneJoltageDifference += 1
+            # Could move this after the 'else branch', and subtract 1 from the other additions, but it is easier to understand the logic as it is now
+            currentJoltage += 1
+        elif currentJoltage + 2 in joltsSet:
+            currentJoltage += 2
+        elif currentJoltage + 3 in joltsSet:
+            numAdaptersWithThreeJoltageDifference += 1
+            currentJoltage += 3
+        else:
+            raise ValueError("Connecting adapters is not possible.")
+
+    return numAdaptersWithOneJoltageDifference * numAdaptersWithThreeJoltageDifference
 
 
 def countDistictWaysToArrangeAdapters(jolts):
-    joltages = list(jolts.keys())
-    joltages.sort()
-
-    maxJoltage = max(joltages)
+    jolts.sort()
+    maxJoltage = max(jolts)
     memo = [0] * (maxJoltage + 1)
-
     memo[0] = 1
 
-    for num in joltages:
-        memo[num] = memo[num-1] + memo[num-2] + memo[num-3]
+    for jolt in jolts:
+        memo[jolt] = memo[jolt - 1] + memo[jolt - 2] + memo[jolt - 3]
+
+    return memo[maxJoltage]
 
 
-    return max(memo)
+def main():
+    jolts = getJolts(INPUT_FILE)
 
-jolts = getInput(TEST_INPUT_SHORT)
-# res = getResult(jolts)
-# print(res)
-# print("----------")
-# jolts2 = getInput(TEST_INPUT_LONG)
-# res2 = getResult(jolts2)
-# print(res2)
-# print("----------")
-# jolts3 = getInput(INPUT_FILE)
-# res3 = getResult(jolts3)
-# print(res3)
+    print(getJoltageDifferenceCountersProduct(jolts))  # 2414
+    print(countDistictWaysToArrangeAdapters(jolts))  # 21156911906816
 
-sj = countDistictWaysToArrangeAdapters(jolts)
-print(sj)
 
-jolts2 = getInput(TEST_INPUT_LONG)
-c = countDistictWaysToArrangeAdapters(jolts2)
-print(c)
+class JoltsTester(unittest.TestCase):
+    def test_getJoltageDifferenceCountersProduct_shortInput_correctProductReturned(self):
+        jolts = getJolts(TEST_INPUT_SHORT)
+        self.assertEqual(35, getJoltageDifferenceCountersProduct(jolts))
 
-v = getInput(INPUT_FILE)
-print(countDistictWaysToArrangeAdapters(v))
+    def test_getJoltageDifferenceCountersProduct_longInput_correctProductReturned(self):
+        jolts = getJolts(TEST_INPUT_LONG)
+        self.assertEqual(220, getJoltageDifferenceCountersProduct(jolts))
+
+    def test_countDistinctWaysToArrangeAdapters_shortInput_correctCountReturned(self):
+        jolts = getJolts(TEST_INPUT_SHORT)
+        self.assertEqual(8, countDistictWaysToArrangeAdapters(jolts))
+
+    def test_countDistinctWaysToArrangeAdapters_longInput_correctCountReturned(self):
+        jolts = getJolts(TEST_INPUT_LONG)
+        self.assertEqual(19208, countDistictWaysToArrangeAdapters(jolts))
+
+
+if __name__ == '__main__':
+    # main()
+    unittest.main()
