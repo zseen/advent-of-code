@@ -7,6 +7,9 @@ from enum import Enum
 INPUT_FILE = "input.txt"
 TEST_INPUT = "test_input.txt"
 
+TOLERANCE_TRESHOLD_PART_ONE = 4
+TOLERANCE_TRESHOLD_PART_TWO = 5
+
 
 class Occupancy(Enum):
     EMPTY = "L"
@@ -23,23 +26,29 @@ class FerrySeating:
         self.prevGrid = None
 
 
-    def getNextStateGrid(self):
+    def getNextStateGrid(self, toleranceTreshold):
         nextGrid = createEmptyGrid(self.size)
         self.prevGrid = self.grid
 
         for j in range(0, len(self.grid[0])):
             for i in range(0, len(self.grid)):
-                nextGrid[j][i] = self.getNextStateOfCellInPosition(j, i)
+                nextGrid[j][i] = self.getNextStateOfCellInPosition(j, i, toleranceTreshold)
 
         self.grid = nextGrid
 
-    def getNextStateOfCellInPosition(self, j, i):
+    def getNextStateOfCellInPosition(self, j, i, toleranceTreshold: int):
         if self.grid[j][i] == ".":
             return "."
-        occupiedCellNeighboursCount = self.getOccupiedCellNeighboursCount(j, i)
+
+        if toleranceTreshold == TOLERANCE_TRESHOLD_PART_ONE:
+            occupiedCellNeighboursCount = self.getOccupiedCellNeighboursCount(j, i)
+        elif toleranceTreshold == TOLERANCE_TRESHOLD_PART_TWO:
+            occupiedCellNeighboursCount = self.getOccupiedCellFirstSeenFromPositionCount(j, i)
+        else:
+            raise ValueError("Bad treshold received")
 
         if self.grid[j][i] == Occupancy.OCCUPIED.value:
-            if occupiedCellNeighboursCount >= 4:
+            if occupiedCellNeighboursCount >= toleranceTreshold:
                 return Occupancy.EMPTY.value
         elif self.grid[j][i] == Occupancy.EMPTY.value:
              if occupiedCellNeighboursCount == 0:
@@ -61,6 +70,105 @@ class FerrySeating:
             occupiedCellNeighboursCount -= 1
 
         return occupiedCellNeighboursCount
+
+
+    def getOccupiedCellFirstSeenFromPositionCount(self, j, i):
+        currentCell = self.grid[j][i]
+        occupiedCellCount = 0
+
+        # north
+        rowIndex = j - 1
+        while rowIndex >= 0:
+            if self.grid[rowIndex][i] == Occupancy.EMPTY.value:
+                break
+            if self.grid[rowIndex][i] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            rowIndex -= 1
+
+        # south
+        rowIndex = j + 1
+        while rowIndex < self.size:
+            if self.grid[rowIndex][i] == Occupancy.EMPTY.value:
+                break
+            if self.grid[rowIndex][i] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            rowIndex += 1
+
+        # east
+        columnIndex = i + 1
+        while columnIndex < self.size:
+            if self.grid[j][columnIndex] == Occupancy.EMPTY.value:
+                break
+            if self.grid[j][columnIndex] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            columnIndex += 1
+
+        # west
+        columnIndex = i - 1
+        while columnIndex >= 0:
+            if self.grid[j][columnIndex] == Occupancy.EMPTY.value:
+                break
+            if self.grid[j][columnIndex] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            columnIndex -= 1
+
+        # northwest
+        rowIndex = j - 1
+        columnIndex = i - 1
+        while rowIndex >= 0 and columnIndex >= 0 :
+            if self.grid[rowIndex][columnIndex] == Occupancy.EMPTY.value:
+                break
+            if self.grid[rowIndex][columnIndex] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            rowIndex -= 1
+            columnIndex -= 1
+
+        # northeast
+        rowIndex = j -1
+        columnIndex = i + 1
+        while rowIndex >= 0 and columnIndex < self.size:
+            if self.grid[rowIndex][columnIndex] == Occupancy.EMPTY.value:
+                break
+            if self.grid[rowIndex][columnIndex] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            rowIndex -= 1
+            columnIndex += 1
+
+        # southwest
+        rowIndex = j + 1
+        columnIndex = i - 1
+        while rowIndex < self.size and columnIndex >= 0:
+            if self.grid[rowIndex][columnIndex] == Occupancy.EMPTY.value:
+                break
+            if self.grid[rowIndex][columnIndex] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            rowIndex += 1
+            columnIndex -= 1
+
+        # southeast
+        rowIndex = j + 1
+        columnIndex = i + 1
+        while rowIndex < self.size and columnIndex < self.size:
+            if self.grid[rowIndex][columnIndex] == Occupancy.EMPTY.value:
+                break
+            if self.grid[rowIndex][columnIndex] == Occupancy.OCCUPIED.value:
+                occupiedCellCount += 1
+                break
+            rowIndex += 1
+            columnIndex += 1
+
+
+
+
+        return occupiedCellCount
+
 
 def printGrid(grid):
   for subArray in grid:
@@ -99,42 +207,75 @@ def getInput(inputFile: str):
 
 
 
-area = getInput(TEST_INPUT)
-gol = FerrySeating(area[0], area[1])
+# area = getInput(TEST_INPUT)
+#
+# secondFerrySeating = FerrySeating(area[0], area[1])
+# #
+# # for i in range(0, 5):
+# #     secondFerrySeating.getNextStateGrid(TOLERANCE_TRESHOLD_PART_TWO)
+#
+#
+#
+# #printGrid(secondFerrySeating.grid)
+#
+# while secondFerrySeating.prevGrid != secondFerrySeating.grid:
+#     secondFerrySeating.getNextStateGrid(TOLERANCE_TRESHOLD_PART_TWO)
+#
+# # printGrid(secondFerrySeating.grid)
+#
+# occ = getOccupiedSeatCountInGrid(secondFerrySeating.grid)
+# print(occ)
 
 
-for i in range(0, 5):
-    gol.getNextStateGrid()
 
+mainRun = getInput(INPUT_FILE)
+mainFerrySeating = FerrySeating(mainRun[0], mainRun[1])
 
-testGridLast =["#.#L.L#.##",
-"#LLL#LL.L#",
-"L.#.L..#..",
-"#L##.##.L#",
-"#.#L.LL.LL",
-"#.#L#L#.##",
-"..L.L.....",
-"#L#L##L#L#",
-"#.LLLLLL.L",
-"#.#L#L#.##"]
+while mainFerrySeating.prevGrid != mainFerrySeating.grid:
+    mainFerrySeating.getNextStateGrid(TOLERANCE_TRESHOLD_PART_TWO)
 
-tl = []
-for row in testGridLast:
-    tl.append(list(row))
-
-
-print(gol.grid == tl)
-
-
-occ = getOccupiedSeatCountInGrid(gol.grid)
+occ = getOccupiedSeatCountInGrid(mainFerrySeating.grid)
 print(occ)
 
-mainGrid = getInput(INPUT_FILE)
-ferrySeating = FerrySeating(mainGrid[0], mainGrid[1])
 
-while ferrySeating.grid != ferrySeating.prevGrid:
-    ferrySeating.getNextStateGrid()
 
-print(getOccupiedSeatCountInGrid(ferrySeating.grid))
+
+
+
+
+
+# --------------- Part1 -------------------------------------
+# gol = FerrySeating(area[0], area[1])
+# for i in range(0, 5):
+#     gol.getNextStateGrid(TOLERANCE_TRESHOLD_PART_ONE)
+# testGridLast =["#.#L.L#.##",
+# "#LLL#LL.L#",
+# "L.#.L..#..",
+# "#L##.##.L#",
+# "#.#L.LL.LL",
+# "#.#L#L#.##",
+# "..L.L.....",
+# "#L#L##L#L#",
+# "#.LLLLLL.L",
+# "#.#L#L#.##"]
+#
+# tl = []
+# for row in testGridLast:
+#     tl.append(list(row))
+#
+#
+# print(gol.grid == tl)
+#
+#
+# occ = getOccupiedSeatCountInGrid(gol.grid)
+# print(occ)
+
+# mainGrid = getInput(INPUT_FILE)
+# ferrySeating = FerrySeating(mainGrid[0], mainGrid[1])
+#
+# while ferrySeating.grid != ferrySeating.prevGrid:
+#     ferrySeating.getNextStateGrid(TOLERANCE_TRESHOLD_PART_ONE)
+
+# print(getOccupiedSeatCountInGrid(ferrySeating.grid)) 2470
 
 
