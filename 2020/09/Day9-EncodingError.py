@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Text
+from typing import List
 from collections import deque
 
 INPUT_FILE = "input.txt"
@@ -9,7 +9,7 @@ PREAMBLE_LENGTH = 25
 PREAMBLE_LENGTH_TEST = 5
 
 
-def getInput(inputFile: Text):
+def getInput(inputFile: str):
     numbers = []
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
