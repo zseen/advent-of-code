@@ -1,48 +1,79 @@
 from occupancyEnum import Occupancy
 
 
+class Coordinates:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+
+
+
 class OccupiedSeatCounter:
     def __init__(self, grid):
         self.grid = grid
         self.size = len(grid)
+        self.heigtht = len(self.grid)
+        self.width = len(self.grid[0]) if self.grid else 0
+
 
     def getOccupiedNeighbourSeatsCount(self, j, i):
-        northNeighbourRowIndex = None if j == 0 else j - 1
-        southNeighbourRowIndex = None if j == self.size - 1 else j + 1
-        westNeighbourColumnIndex = None if i == 0 else i - 1
-        eastNeighbourColumnIndex = None if i == self.size - 1 else i + 1
+        occupiedNeighboursCount = 0
 
-        occupiedSeatsCount = 0
+        for verticalOffset in range(-1, 2):
+            for horizontalOffset in range(-1, 2):
+                if self.size > j + verticalOffset >= 0:
+                    if self.size > i + horizontalOffset >= 0:
+                        if self.grid[j + verticalOffset][i + horizontalOffset] == Occupancy.OCCUPIED.value:
+                            occupiedNeighboursCount += 1
 
-        if northNeighbourRowIndex is not None:
-            if self.grid[northNeighbourRowIndex][i] == Occupancy.OCCUPIED.value:
-                occupiedSeatsCount += 1
-            if westNeighbourColumnIndex is not None:
-                if self.grid[northNeighbourRowIndex][westNeighbourColumnIndex] == Occupancy.OCCUPIED.value:
-                    occupiedSeatsCount += 1
-            if eastNeighbourColumnIndex is not None:
-                if self.grid[northNeighbourRowIndex][eastNeighbourColumnIndex] == Occupancy.OCCUPIED.value:
-                    occupiedSeatsCount += 1
-        if southNeighbourRowIndex is not None:
-            if self.grid[southNeighbourRowIndex][i] == Occupancy.OCCUPIED.value:
-                occupiedSeatsCount += 1
-            if westNeighbourColumnIndex is not None:
-                if self.grid[southNeighbourRowIndex][westNeighbourColumnIndex] == Occupancy.OCCUPIED.value:
-                    occupiedSeatsCount += 1
-            if eastNeighbourColumnIndex != None:
-                if self.grid[southNeighbourRowIndex][eastNeighbourColumnIndex] == Occupancy.OCCUPIED.value:
-                    occupiedSeatsCount += 1
-        if westNeighbourColumnIndex is not None:
-            if self.grid[j][westNeighbourColumnIndex] == Occupancy.OCCUPIED.value:
-                occupiedSeatsCount += 1
+        if self.grid[j][i] == Occupancy.OCCUPIED.value:
+            occupiedNeighboursCount -= 1
 
-        if eastNeighbourColumnIndex is not None:
-            if self.grid[j][eastNeighbourColumnIndex] == Occupancy.OCCUPIED.value:
-                occupiedSeatsCount += 1
+        return occupiedNeighboursCount
 
-        return occupiedSeatsCount
 
-    def getOccupiedSeatsVisibleFromSeat(self, j, i):
+
+
+
+    def getOccupiedSeatsVisibleFromSeatCount(self, j, i, visibilityRange):
+        oc = 0
+
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        for direction in directions:
+            oc += 1 if self.isOccInDir(j, i, direction[0], direction[1], visibilityRange) else 0
+
+        return oc
+
+
+    def isOccInDir(self, ystart, xstart, xdelta, ydelta, visibilityRange):
+        for i in range(visibilityRange):
+            xstart += xdelta
+            ystart += ydelta
+            if  self.isCoordinateOutOfBounds(ystart, xstart):
+                return False
+
+            if self.grid[ystart][xstart] == Occupancy.EMPTY.value:
+                return False
+            if self.grid[ystart][xstart] == Occupancy.OCCUPIED.value:
+                return True
+        return False
+
+
+    def isCoordinateOutOfBounds(self, j, i):
+        if j >= self.heigtht or j < 0:
+            return True
+        if i >= self.width or i < 0:
+            return True
+        return False
+
+
+
+
+
+
+    def getOccupiedSeatsVisibleFromSeat2(self, j, i):
         occupiedSeatsCount = 0
 
         # north
@@ -136,6 +167,7 @@ class OccupiedSeatCounter:
         return occupiedSeatsCount
 
     def countOccupiedSeatsInGrid(self):
+
         occupiedSeatsCount = 0
         for j in range(0, self.size):
             for i in range(0, self.size):
