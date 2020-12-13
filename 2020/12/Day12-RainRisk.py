@@ -40,22 +40,48 @@ class Coordinate:
         self.x = x
         self.y = y
 
+
 class FerryMover:
     def __init__(self):
-        self.state = Coordinate(0,0)
-        self.facing = Compass.EAST
+        self.position: Coordinate = Coordinate(0,0)
+        self.wayPoint: Coordinate = Coordinate(10, 1)
+
+
+    def turnRight(self):
+        self.wayPoint.x, self.wayPoint.y = self.wayPoint.y, self.wayPoint.x * -1
+
+
+    def turnLeft(self):
+        for i in range(0, 3):
+            self.turnRight()
+
+    # def handleCompass(self, coordinateToModify):
+    #     if instruction.action == Compass.NORTH.value:
+    #         coordinateToModify.y += instruction.value
+    #     elif instruction.action == Compass.SOUTH.value:
+    #         coordinateToModify.y -= instruction.value
+    #     elif instruction.action == Compass.WEST.value:
+    #         coordinateToModify.x -= instruction.value
+    #     elif instruction.action == Compass.EAST.value:
+    #         coordinateToModify.x += instruction.value
 
     def followInstruction(self, instruction: Instruction):
         if instruction.action == Compass.NORTH.value:
-            self.state.y += instruction.value
+            self.wayPoint.y += instruction.value
         elif instruction.action == Compass.SOUTH.value:
-            self.state.y -= instruction.value
+            self.wayPoint.y -= instruction.value
         elif instruction.action == Compass.WEST.value:
-            self.state.x -= instruction.value
+            self.wayPoint.x -= instruction.value
         elif instruction.action == Compass.EAST.value:
-            self.state.x += instruction.value
-        elif instruction.action == Direction.RIGHT.value or instruction.action == Direction.LEFT.value:
-            self.turn(instruction)
+            self.wayPoint.x += instruction.value
+
+
+        elif instruction.action == Direction.RIGHT.value:
+            for i in range(0, instruction.value // 90):
+                self.turnRight()
+        elif instruction.action == Direction.LEFT.value:
+            for i in range(0, instruction.value // 90):
+                self.turnLeft()
         elif instruction.action == Move.FORWARD.value:
             self.moveForward(instruction.value)
         else:
@@ -63,81 +89,28 @@ class FerryMover:
 
 
 
-    def turn(self, instruction):
-        if instruction.action == Direction.RIGHT.value:
-            if instruction.value == 90:
-                if self.facing == Compass.NORTH:
-                    self.facing = Compass.EAST
-                elif self.facing == Compass.EAST:
-                    self.facing = Compass.SOUTH
-                elif self.facing == Compass.SOUTH:
-                    self.facing = Compass.WEST
-                elif self.facing == Compass.WEST:
-                    self.facing = Compass.NORTH
-
-            elif instruction.value == 180:
-                if self.facing == Compass.NORTH:
-                    self.facing = Compass.SOUTH
-                elif self.facing == Compass.EAST:
-                    self.facing = Compass.WEST
-                elif self.facing == Compass.SOUTH:
-                    self.facing = Compass.NORTH
-                elif self.facing == Compass.WEST:
-                    self.facing = Compass.EAST
-
-            elif instruction.value == 270:
-                if self.facing == Compass.NORTH:
-                    self.facing = Compass.WEST
-                elif self.facing == Compass.EAST:
-                    self.facing = Compass.NORTH
-                elif self.facing == Compass.SOUTH:
-                    self.facing = Compass.EAST
-                elif self.facing == Compass.WEST:
-                    self.facing = Compass.SOUTH
-
-        elif instruction.action == Direction.LEFT.value:
-            if instruction.value == 90:
-                if self.facing == Compass.NORTH:
-                    self.facing = Compass.WEST
-                elif self.facing == Compass.WEST:
-                    self.facing = Compass.SOUTH
-                elif self.facing == Compass.EAST:
-                    self.facing = Compass.NORTH
-                elif self.facing == Compass.SOUTH:
-                    self.facing = Compass.EAST
-            elif instruction.value == 180:
-                if self.facing == Compass.NORTH:
-                    self.facing = Compass.SOUTH
-                elif self.facing == Compass.EAST:
-                    self.facing = Compass.WEST
-                elif self.facing == Compass.SOUTH:
-                    self.facing = Compass.NORTH
-                elif self.facing == Compass.WEST:
-                    self.facing = Compass.EAST
-
-            elif instruction.value == 270:
-                if self.facing == Compass.NORTH:
-                    self.facing = Compass.EAST
-                elif self.facing == Compass.EAST:
-                    self.facing = Compass.SOUTH
-                elif self.facing == Compass.SOUTH:
-                    self.facing = Compass.WEST
-                elif self.facing == Compass.WEST:
-                    self.facing = Compass.NORTH
-
-
     def moveForward(self, value):
-        if self.facing == Compass.EAST:
-            self.state.x += value
-        elif self.facing == Compass.WEST:
-            self.state.x -= value
-        elif self.facing == Compass.NORTH:
-            self.state.y += value
-        elif self.facing == Compass.SOUTH:
-            self.state.y -= value
+        self.position.x += self.wayPoint.x * value
+        self.position.y += self.wayPoint.y * value
+
+        # vektor 90 fokkal ugy forgatom el jobbra h megcsereleme a ket koordinatajat ;s veszem az y negaltjat
+
+        # kozoes a ket reszben: forward implementacioja az h self.position += self.waypointvector
+        # elso resyben a self.waypointvector az
+
+
+        # self.wayPoint az self.waypointvector
+        # self.waypointvector alapbol (1,0), mert east wayPoint a hajo az elso part elejen
+        # self.position =+ self.waypointvector
+        # amikor forgatod, akkor a waypoint vectort forgatod 90 fokkal
+        
+        # masodik reszben a north-south-east-west a waypoint vectort valtoztatja
+        # nevezheted velocity vectornak is
+        # masodik reszben annyi a kulonbseg h a compass nem a positiont(position) valtoztatje hanem a waypointot
+
 
     def getManhattanDistanceFromOrigin(self):
-        return abs(self.state.x) + abs(self.state.y)
+        return abs(self.position.x) + abs(self.position.y)
 
 
 
@@ -151,7 +124,9 @@ for ins in instructions:
 
 print(ferryMover.getManhattanDistanceFromOrigin())
 
+# not 53658 not 55244, should be 52742
 
+# test should be 286
 
 
 
