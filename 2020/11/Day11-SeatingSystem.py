@@ -2,14 +2,17 @@ import unittest
 from typing import List
 from enum import Enum
 from copy import deepcopy
+import sys
 
 INPUT_FILE = "input.txt"
 TEST_INPUT = "test_input.txt"
 
-TOLERANCE_TRESHOLD_PART_ONE = 4
-TOLERANCE_TRESHOLD_PART_TWO = 5
+TOLERANCE_THRESHOLD_PART_ONE = 4
+TOLERANCE_THRESHOLD_PART_TWO = 5
 VISIBILITY_RANGE_PART_ONE = 1
-VISIBILITY_RANGE_PART_TWO = 1000 ** 3
+VISIBILITY_RANGE_PART_TWO = sys.maxsize
+
+DIRECTIONS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
 
 class Occupancy(Enum):
@@ -19,29 +22,42 @@ class Occupancy(Enum):
 
 
 class FerrySeatingOrganizer:
-    def __init__(self, grid: [[str]], toleranceThreshold: int, visibilityRange: int):
+    def __init__(self, grid: List[List[str]], toleranceThreshold: int, visibilityRange: int):
         self.grid = grid
-        self.prevGrid: List[str] = []
-        self.toleranceThreshold = toleranceThreshold
         self.width: int = len(grid[0]) if self.grid else 0
         self.height: int = len(grid)
+        self.toleranceThreshold = toleranceThreshold
         self.visibilityRange = visibilityRange
 
-    def getNextStateGrid(self):
+    def runUntilNoChangePossible(self):
+        prevGrid = None
+        while prevGrid != self.grid:
+            prevGrid = self.grid
+            self.grid = self._getNextStateGrid()
+
+    def countOccupiedSeatsInGrid(self):
+        occupiedSeatsCount = 0
+        for j in range(0, self.height):
+            for i in range(0, self.width):
+                if self.grid[i][j] == Occupancy.OCCUPIED.value:
+                    occupiedSeatsCount += 1
+        return occupiedSeatsCount
+
+    def _getNextStateGrid(self):
         nextGrid = deepcopy(self.grid)
 
         for j in range(0, self.height):
             for i in range(0, self.width):
-                nextGrid[j][i] = self._getNextStateOfSeatOccupancy(j, i)
+                nextGrid[j][i] = self._getNextStateOfSeatOccupancy(i, j)
 
-        self.prevGrid = self.grid
         self.grid = nextGrid
+        return self.grid
 
-    def _getNextStateOfSeatOccupancy(self, j: int, i: int):
+    def _getNextStateOfSeatOccupancy(self, i: int, j: int):
         if self.grid[j][i] == Occupancy.FLOOR.value:
             return Occupancy.FLOOR.value
 
-        occupiedSeatsCount = self.countOccupiedSeatsVisibleFromSeat(j, i)
+        occupiedSeatsCount = self._countOccupiedSeatsVisibleFromSeat(i, j)
 
         if self.grid[j][i] == Occupancy.OCCUPIED.value:
             if occupiedSeatsCount >= self.toleranceThreshold:
@@ -52,20 +68,19 @@ class FerrySeatingOrganizer:
 
         return self.grid[j][i]
 
-    def countOccupiedSeatsVisibleFromSeat(self, j: int, i: int):
+    def _countOccupiedSeatsVisibleFromSeat(self, i: int, j: int):
         occupiedSeatsCounter = 0
 
-        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-        for direction in directions:
-            occupiedSeatsCounter += 1 if self.isOccupiedSeatInDirection(j, i, direction[0], direction[1]) else 0
+        for direction in DIRECTIONS:
+            occupiedSeatsCounter += 1 if self._isOccupiedSeatInDirection(i, j, direction[1], direction[0]) else 0
 
         return occupiedSeatsCounter
 
-    def isOccupiedSeatInDirection(self, j: int, i: int, jDirection: int, iDirection: int):
+    def _isOccupiedSeatInDirection(self, i: int, j: int, xDirection: int, yDirection: int):
         for _ in range(self.visibilityRange):
-            j += jDirection
-            i += iDirection
-            if self.isCoordinateOutOfBounds(j, i):
+            i += xDirection
+            j += yDirection
+            if self._isCoordinateOutOfBounds(j, i):
                 return False
             if self.grid[j][i] == Occupancy.EMPTY.value:
                 return False
@@ -73,22 +88,10 @@ class FerrySeatingOrganizer:
                 return True
         return False
 
-    def isCoordinateOutOfBounds(self, j: int, i: int):
+    def _isCoordinateOutOfBounds(self, i: int, j: int):
         jOutBounds = j >= self.height or j < 0
         iOutBounds = i >= self.width or i < 0
         return jOutBounds or iOutBounds
-
-    def runUntilNoChangePossible(self):
-        while self.prevGrid != self.grid:
-            self.getNextStateGrid()
-
-    def countOccupiedSeatsInGrid(self):
-        occupiedSeatsCount = 0
-        for j in range(0, self.height):
-            for i in range(0, self.width):
-                if self.grid[i][j] == Occupancy.OCCUPIED.value:
-                    occupiedSeatsCount += 1
-        return occupiedSeatsCount
 
 
 def getInput(inputFile: str):
@@ -103,29 +106,33 @@ def getInput(inputFile: str):
 
 
 def main():
-    ferrySeatingPlace = getInput(INPUT_FILE)
+    initialFerrySeating = getInput(INPUT_FILE)
 
-    ferrySeating = FerrySeatingOrganizer(ferrySeatingPlace, TOLERANCE_TRESHOLD_PART_ONE, VISIBILITY_RANGE_PART_ONE)
-    ferrySeating.runUntilNoChangePossible()
-    print(ferrySeating.countOccupiedSeatsInGrid())  # 2470
+    ferrySeatingOrganizer = FerrySeatingOrganizer(initialFerrySeating, TOLERANCE_THRESHOLD_PART_ONE,
+                                                  VISIBILITY_RANGE_PART_ONE)
+    ferrySeatingOrganizer.runUntilNoChangePossible()
+    print(ferrySeatingOrganizer.countOccupiedSeatsInGrid())  # 2470
 
-    ferrySeatingPart2 = FerrySeatingOrganizer(ferrySeatingPlace, TOLERANCE_TRESHOLD_PART_TWO, VISIBILITY_RANGE_PART_TWO)
-    ferrySeatingPart2.runUntilNoChangePossible()
-    print(ferrySeatingPart2.countOccupiedSeatsInGrid())  # 2259
+    ferrySeatingOrganizerPart2 = FerrySeatingOrganizer(initialFerrySeating, TOLERANCE_THRESHOLD_PART_TWO,
+                                                       VISIBILITY_RANGE_PART_TWO)
+    ferrySeatingOrganizerPart2.runUntilNoChangePossible()
+    print(ferrySeatingOrganizerPart2.countOccupiedSeatsInGrid())  # 2259
 
 
 class FerrySeatingOrganizerTester(unittest.TestCase):
     def test_getOccupiedSeatCount_occupancyDependsOnDirectNeighbours_correctCountReturned(self):
-        ferrySeatingPlace = getInput(TEST_INPUT)
-        ferrySeating = FerrySeatingOrganizer(ferrySeatingPlace, TOLERANCE_TRESHOLD_PART_ONE, VISIBILITY_RANGE_PART_ONE)
-        ferrySeating.runUntilNoChangePossible()
-        self.assertEqual(37, ferrySeating.countOccupiedSeatsInGrid())
+        initialFerrySeating = getInput(TEST_INPUT)
+        ferrySeatingOrganizer = FerrySeatingOrganizer(initialFerrySeating, TOLERANCE_THRESHOLD_PART_ONE,
+                                                      VISIBILITY_RANGE_PART_ONE)
+        ferrySeatingOrganizer.runUntilNoChangePossible()
+        self.assertEqual(37, ferrySeatingOrganizer.countOccupiedSeatsInGrid())
 
     def test_getOccupiedSeatCount_occupancyDependsOnRecursiveNeighbours_correctCountReturned(self):
-        ferrySeatingPlace = getInput(TEST_INPUT)
-        ferrySeating = FerrySeatingOrganizer(ferrySeatingPlace, TOLERANCE_TRESHOLD_PART_TWO, VISIBILITY_RANGE_PART_TWO)
-        ferrySeating.runUntilNoChangePossible()
-        self.assertEqual(26, ferrySeating.countOccupiedSeatsInGrid())
+        initialFerrySeating = getInput(TEST_INPUT)
+        ferrySeatingOrganizer = FerrySeatingOrganizer(initialFerrySeating, TOLERANCE_THRESHOLD_PART_TWO,
+                                                      VISIBILITY_RANGE_PART_TWO)
+        ferrySeatingOrganizer.runUntilNoChangePossible()
+        self.assertEqual(26, ferrySeatingOrganizer.countOccupiedSeatsInGrid())
 
 
 if __name__ == '__main__':
