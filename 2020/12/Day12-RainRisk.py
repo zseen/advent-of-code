@@ -25,6 +25,10 @@ class Direction(Enum):
 class Move(Enum):
     FORWARD = "F"
 
+class ExercisePart(Enum):
+    PART_1 = "part_1"
+    PART_2 = "part_2"
+
 def getInstructions(inputFile: str):
     instructions = []
     with open(inputFile, "r") as inputFile:
@@ -42,9 +46,10 @@ class Coordinate:
 
 
 class FerryMover:
-    def __init__(self):
+    def __init__(self, wayPoint: Coordinate, runMode):
         self.position: Coordinate = Coordinate(0,0)
-        self.wayPoint: Coordinate = Coordinate(10, 1)
+        self.wayPoint: Coordinate = wayPoint
+        self.runMode = runMode
 
 
     def turnRight(self):
@@ -55,27 +60,20 @@ class FerryMover:
         for i in range(0, 3):
             self.turnRight()
 
-    # def handleCompass(self, coordinateToModify):
-    #     if instruction.action == Compass.NORTH.value:
-    #         coordinateToModify.y += instruction.value
-    #     elif instruction.action == Compass.SOUTH.value:
-    #         coordinateToModify.y -= instruction.value
-    #     elif instruction.action == Compass.WEST.value:
-    #         coordinateToModify.x -= instruction.value
-    #     elif instruction.action == Compass.EAST.value:
-    #         coordinateToModify.x += instruction.value
+    def handleCompass(self, instruction, coordinateToModify):
+        if instruction.action == Compass.NORTH.value:
+            coordinateToModify.y += instruction.value
+        elif instruction.action == Compass.SOUTH.value:
+            coordinateToModify.y -= instruction.value
+        elif instruction.action == Compass.WEST.value:
+            coordinateToModify.x -= instruction.value
+        elif instruction.action == Compass.EAST.value:
+            coordinateToModify.x += instruction.value
 
     def followInstruction(self, instruction: Instruction):
-        if instruction.action == Compass.NORTH.value:
-            self.wayPoint.y += instruction.value
-        elif instruction.action == Compass.SOUTH.value:
-            self.wayPoint.y -= instruction.value
-        elif instruction.action == Compass.WEST.value:
-            self.wayPoint.x -= instruction.value
-        elif instruction.action == Compass.EAST.value:
-            self.wayPoint.x += instruction.value
-
-
+        if instruction.action in [Compass.NORTH.value, Compass.SOUTH.value, Compass.WEST.value, Compass.EAST.value]:
+            coordinateToModify = self.position if self.runMode == ExercisePart.PART_1 else self.wayPoint
+            self.handleCompass(instruction, coordinateToModify)
         elif instruction.action == Direction.RIGHT.value:
             for i in range(0, instruction.value // 90):
                 self.turnRight()
@@ -114,18 +112,22 @@ class FerryMover:
 
 
 
+
+# First part
 instructions = getInstructions(INPUT_FILE)
-
-ferryMover = FerryMover()
-
+ferryMover = FerryMover(Coordinate(1, 0), ExercisePart.PART_1)
 for ins in instructions:
     ferryMover.followInstruction(ins)
+print(ferryMover.getManhattanDistanceFromOrigin() == 1010)
 
 
-print(ferryMover.getManhattanDistanceFromOrigin())
+# Second part
+ferryMover2 = FerryMover(Coordinate(10, 1), ExercisePart.PART_2)
+for ins in instructions:
+    ferryMover2.followInstruction(ins)
+print(ferryMover2.getManhattanDistanceFromOrigin() == 52742)
 
 # not 53658 not 55244, should be 52742
-
 # test should be 286
 
 
