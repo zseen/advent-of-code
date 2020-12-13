@@ -29,7 +29,7 @@ class Instruction:
 
 
 class Coordinate:
-    def __init__(self, x, y):
+    def __init__(self, x: int, y: int):
         self.x = x
         self.y = y
 
@@ -58,7 +58,7 @@ class FerryMover:
         else:
             raise ValueError("Unknown instruction received.")
 
-    def handleCompass(self, instruction):
+    def handleCompass(self, instruction: Instruction):
         if instruction.action == Compass.NORTH.value:
             self.position.y += instruction.value
         elif instruction.action == Compass.SOUTH.value:
@@ -75,7 +75,7 @@ class FerryMover:
         for i in range(0, 3):
             self.turnRight()
 
-    def moveForward(self, value):
+    def moveForward(self, value: int):
         self.position.x += self.wayPoint.x * value
         self.position.y += self.wayPoint.y * value
 
@@ -84,7 +84,7 @@ class FerryMover:
 
 
 class FerryMoverWithRelativeWayPoint(FerryMover):
-    def handleCompass(self, instruction):
+    def handleCompass(self, instruction: Instruction):
         if instruction.action == Compass.NORTH.value:
             self.wayPoint.y += instruction.value
         elif instruction.action == Compass.SOUTH.value:
