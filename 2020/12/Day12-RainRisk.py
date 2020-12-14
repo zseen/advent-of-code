@@ -33,6 +33,9 @@ class Coordinate:
         self.x = x
         self.y = y
 
+COORDINATE_FOR_PART_ONE = Coordinate(1, 0)
+COORDINATE_FOR_PART_TWO = Coordinate(10, 1)
+
 
 class FerryMover:
     def __init__(self, waypoint: Coordinate, instructions: List[Instruction]):
@@ -107,11 +110,11 @@ def getInstructions(inputFile: str):
 def main():
     instructions = getInstructions(INPUT_FILE)
 
-    ferryMover = FerryMover(Coordinate(1, 0), instructions)
+    ferryMover = FerryMover(COORDINATE_FOR_PART_ONE, instructions)
     ferryMover.followInstructions()
     print(ferryMover.getManhattanDistanceFromOrigin())  # 1010
 
-    ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(Coordinate(10, 1), instructions)
+    ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(COORDINATE_FOR_PART_TWO, instructions)
     ferryMoverWithRelativeWaypoint.followInstructions()
     print(ferryMoverWithRelativeWaypoint.getManhattanDistanceFromOrigin())  # 52742
 
@@ -119,13 +122,13 @@ def main():
 class FerryMoversTester(unittest.TestCase):
     def test_getManhattanDistance_setWaypoint_correctDistanceReturned(self):
         instructions = getInstructions(TEST_INPUT_FILE)
-        ferryMover = FerryMover(Coordinate(1, 0), instructions)
+        ferryMover = FerryMover(COORDINATE_FOR_PART_ONE, instructions)
         ferryMover.followInstructions()
         self.assertEqual(25, ferryMover.getManhattanDistanceFromOrigin())
 
     def test_getManhattanDistance_relativeWaypoint_correctDistanceReturned(self):
         instructions = getInstructions(TEST_INPUT_FILE)
-        ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(Coordinate(10, 1), instructions)
+        ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(COORDINATE_FOR_PART_TWO, instructions)
         ferryMoverWithRelativeWaypoint.followInstructions()
         self.assertEqual(286, ferryMoverWithRelativeWaypoint.getManhattanDistanceFromOrigin())
 
