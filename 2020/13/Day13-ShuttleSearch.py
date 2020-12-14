@@ -6,11 +6,11 @@ INPUT_FILE = "input.txt"
 TEST_INPUT = "test_input.txt"
 
 class ShuttleBusFinder:
-    def __init__(self, earliestTimestamp: int, busIDs: List[int]):
+    def __init__(self, earliestTimestamp: int, busIDs: List[str]):
         self.earliestTimestamp = earliestTimestamp
-        self.busIDs = busIDs
+        self.busIDs = [int(busID) for busID in busIDs if busID.isnumeric()]
 
-    def getEarliestSuitableBusID(self):
+    def getEarliestSuitableBusIDAndWaitTimeProduct(self):
         busIDToWaitTime = dict()
         for busID in self.busIDs:
             currentDivisionResult = self.earliestTimestamp // busID
@@ -28,20 +28,21 @@ class ShuttleBusFinder:
 
         return busIDWithLeastWaitTime * minWaitTime
 
-def getShuttleBusFinder(inputFile: str):
-    with open(inputFile, "r") as inputFile:
-        lines = inputFile.readlines()
-        if len(lines) > 1:
-            busIDs = lines[1].strip("\n").split(",")
-            validBusIDs = [int(busID) for busID in busIDs if busID.isnumeric()]
-            return ShuttleBusFinder(int(lines[0].strip("\n")), validBusIDs)
-        raise ValueError("Doublecheck the input format.")
-
 
 class EarliestTimestampFinder:
-    def __init__(self, busIDToOffset: Dict[int, int], timestamps: List[int]):
-        self.busIDToOffset = busIDToOffset
-        self.timestamps = timestamps
+    def __init__(self, busIDs: List[str]):
+        self.busIDs = busIDs
+        self.busIDToOffset: Dict[int, int] = self.getBusIDsToOffset()
+        self.timestamps = [int(busID) for busID in busIDs if busID.isnumeric()]
+
+    def getBusIDsToOffset(self):
+        busIDsToOffset = dict()
+        busIDOffset = 0
+        while busIDOffset != len(self.busIDs):
+            if self.busIDs[busIDOffset].isnumeric():
+                busIDsToOffset[int(self.busIDs[busIDOffset])] = busIDOffset
+            busIDOffset += 1
+        return busIDsToOffset
 
     def getEarliestTimestampBusesArriveInOffsetOrder(self):
         if not self.timestamps:
@@ -58,32 +59,38 @@ class EarliestTimestampFinder:
 
         return currentTimestamp
 
-def getEarliestTimestampFinder(inputFile: str):
+
+
+def getTimestampAndBusIDs(inputFile: str):
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
         if len(lines) > 1:
-            busIDs = lines[1].strip("\n").split(",")
-            validBusIDs = [int(busID) for busID in busIDs if busID.isnumeric()]
-            busIdToOffset = dict()
-            busIdOffset = 0
-            while busIdOffset != len(busIDs):
-                if busIDs[busIdOffset].isnumeric():
-                    busIdToOffset[int(busIDs[busIdOffset])] = busIdOffset
-                busIdOffset += 1
-
-            return EarliestTimestampFinder(busIdToOffset, validBusIDs)
-
+            return (int(lines[0].strip("\n")), lines[1].strip("\n").split(","))
 
         raise ValueError("Doublecheck the input format.")
 
 
-
 def main():
-    shuttleBusFinder = getShuttleBusFinder(INPUT_FILE)
-    print(shuttleBusFinder.getEarliestSuitableBusID()) # 3035
+    timestamp, busIDs = getTimestampAndBusIDs(INPUT_FILE)
 
-    earliestTimestampFinder = getEarliestTimestampFinder(INPUT_FILE)
+    shuttleBusFinder = ShuttleBusFinder(timestamp, busIDs)
+    print(shuttleBusFinder.getEarliestSuitableBusIDAndWaitTimeProduct()) # 3035
+
+    earliestTimestampFinder = EarliestTimestampFinder(busIDs)
     print(earliestTimestampFinder.getEarliestTimestampBusesArriveInOffsetOrder()) #725169163285238
+
+class ShuttleBusTimesTester(unittest.TestCase):
+    def test_getEarliestSuitableBusIDAndWaitTimeProduct_noBusToArriveAtExactTimestamp_correctClosestBusAndWaitTimeProductReturned(self):
+        timestamp, busIDs = getTimestampAndBusIDs(TEST_INPUT)
+        shuttleBusFinder = ShuttleBusFinder(timestamp, busIDs)
+        self.assertEqual(295, shuttleBusFinder.getEarliestSuitableBusIDAndWaitTimeProduct())
+
+    def test_getEarliestTimestampBusesArriveInOffsetOrder_setTimestampInInputNotNeeded_correctTimestampReturned(self):
+        timestamp, busIDs = getTimestampAndBusIDs(TEST_INPUT)
+        earliestTimestampFinder = EarliestTimestampFinder(busIDs)
+        self.assertEqual(1068781, earliestTimestampFinder.getEarliestTimestampBusesArriveInOffsetOrder())
+
 
 if __name__ == '__main__':
     main()
+    unittest.main()
