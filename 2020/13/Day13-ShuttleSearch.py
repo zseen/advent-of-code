@@ -5,96 +5,60 @@ import sys
 INPUT_FILE = "input.txt"
 TEST_INPUT = "test_input.txt"
 
-class ShuttleBusOperation:
-    def __init__(self, earliestTimestamp: int, busIDs: List ):
+class ShuttleBusFinder:
+    def __init__(self, earliestTimestamp: int, busIDs: List[int]):
         self.earliestTimestamp = earliestTimestamp
         self.busIDs = busIDs
 
     def getEarliestSuitableBusID(self):
-        busIDtoTimeDifference = dict()
-        for busId in self.busIDs:
-            currentDivisionResult = self.earliestTimestamp // busId
-            if currentDivisionResult * busId == self.earliestTimestamp:
-                return busId
+        busIDToWaitTime = dict()
+        for busID in self.busIDs:
+            currentDivisionResult = self.earliestTimestamp // busID
+            if currentDivisionResult * busID == self.earliestTimestamp:
+                return busID * 0 # The busID * waitTime should be returned, in this case the waitTime is 0
             else:
-                busIDtoTimeDifference[busId] = (currentDivisionResult + 1) * busId - self.earliestTimestamp
+                busIDToWaitTime[busID] = (currentDivisionResult + 1) * busID - self.earliestTimestamp
 
-        minDifference = sys.maxsize
-        busIdWithLeastTimeDifference = None
-        for id, timeDifference in busIDtoTimeDifference.items():
-            if timeDifference < minDifference:
-                minDifference = timeDifference
-                busIdWithLeastTimeDifference = id
+        minWaitTime = sys.maxsize
+        busIDWithLeastWaitTime = None
+        for busID, waitTime in busIDToWaitTime.items():
+            if waitTime < minWaitTime:
+                minWaitTime = waitTime
+                busIDWithLeastWaitTime = busID
 
-        return busIdWithLeastTimeDifference * minDifference
+        return busIDWithLeastWaitTime * minWaitTime
+
+def getShuttleBusFinder(inputFile: str):
+    with open(inputFile, "r") as inputFile:
+        lines = inputFile.readlines()
+        if len(lines) > 1:
+            busIDs = lines[1].strip("\n").split(",")
+            validBusIDs = [int(busID) for busID in busIDs if busID.isnumeric()]
+            return ShuttleBusFinder(int(lines[0].strip("\n")), validBusIDs)
+        raise ValueError("Doublecheck the input format.")
+
 
 class EarliestTimestampFinder:
-    def __init__(self, busIDToOffset: Dict[int, int], timestamps):
+    def __init__(self, busIDToOffset: Dict[int, int], timestamps: List[int]):
         self.busIDToOffset = busIDToOffset
-        self.timeStamps = timestamps
+        self.timestamps = timestamps
 
+    def getEarliestTimestampBusesArriveInOffsetOrder(self):
+        if not self.timestamps:
+            raise ValueError("No timestamps.")
 
+        jump = self.timestamps[0]
+        currentTimestamp = self.timestamps[0]
 
-    def getEarliestTimestampBusesArriveAtOffsetPosition2(self):
-        for num in range(100000000000000, 1000000000000000000000000000000000000):
-            isNumPossible = True
-            for offset, busID in self.offsetToBusID.items():
-                if (num + offset) % busID != 0:
-                    isNumPossible = False
+        for i in range(1, len(self.timestamps)):
+            nextTimestamp = self.timestamps[i]
+            while (currentTimestamp + self.busIDToOffset[nextTimestamp]) % nextTimestamp != 0:
+                currentTimestamp += jump
+            jump *= nextTimestamp
 
-            if isNumPossible:
-                return num
+        return currentTimestamp
 
-    def getEarliestTimestampBusesArriveAtOffsetPosition(self):
-        initialJump = self.timeStamps[0]
-        initialStamp = self.timeStamps[0]
-
-
-        for i in range(1, len(self.timeStamps)):
-            nextTimestamp = self.timeStamps[i]
-            while (initialStamp + self.busIDToOffset[nextTimestamp]) % nextTimestamp != 0:
-                initialStamp += initialJump
-            initialJump *= nextTimestamp
-
-        return initialStamp
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        # smallesttimestamp = self.timeStamps[0]
-        # for i in range(1, len(self.timeStamps)):
-        #     currTimestamp = self.timeStamps[i]
-        #     while (smallesttimestamp + busIdToOffset[currTimestamp]) % currTimestamp != 0:
-        #
-        #
-        #
-        #
-        # return smallesttimestamp
-
-
-
-
-    def getMult(self, num, offset):
-        a = []
-        for i in range(1, 1000):
-            a.append(i*num + offset)
-        return a
-
-
-
-
-
-def getAllBusIdsToOffsets(inputFile: str):
+def getEarliestTimestampFinder(inputFile: str):
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
         if len(lines) > 1:
@@ -106,37 +70,20 @@ def getAllBusIdsToOffsets(inputFile: str):
                 if busIDs[busIdOffset].isnumeric():
                     busIdToOffset[int(busIDs[busIdOffset])] = busIdOffset
                 busIdOffset += 1
-            return busIdToOffset, validBusIDs
+
+            return EarliestTimestampFinder(busIdToOffset, validBusIDs)
+
 
         raise ValueError("Doublecheck the input format.")
 
 
 
-def getNotesForPart1(inputFile: str):
-    with open(inputFile, "r") as inputFile:
-        lines = inputFile.readlines()
-        if len(lines) > 1:
-            busIDs = lines[1].strip("\n").split(",")
-            validBusIDs = [int(busID) for busID in busIDs if busID.isnumeric()]
-            return ShuttleBusOperation(int(lines[0].strip("\n")), validBusIDs)
-        raise ValueError("Doublecheck the input format.")
+def main():
+    shuttleBusFinder = getShuttleBusFinder(INPUT_FILE)
+    print(shuttleBusFinder.getEarliestSuitableBusID()) # 3035
 
+    earliestTimestampFinder = getEarliestTimestampFinder(INPUT_FILE)
+    print(earliestTimestampFinder.getEarliestTimestampBusesArriveInOffsetOrder()) #725169163285238
 
-#sb = getNotesForPart1(TEST_INPUT)
-#print(sb.getEarliestSuitableBusID())
-
-efInput = getAllBusIdsToOffsets(INPUT_FILE)
-ef = EarliestTimestampFinder(efInput[0], efInput[1])
-# ef.getOffsetToBusID()
-# #print(ef.offsetToBusID)
-print(ef.getEarliestTimestampBusesArriveAtOffsetPosition())
-
-
-#
-# mechanicInput2 = ["1789","37","47","1889"]
-# mechanicDict = {0: 1789, 1: 37, 2:47, 3: 1889}
-# mi = EarliestTimestampFinder(mechanicDict)
-# mi.offsetToBusID = mechanicDict
-#print(mi.getEarliestTimestampBusesArriveAtOffsetPosition())
-
-
+if __name__ == '__main__':
+    main()
