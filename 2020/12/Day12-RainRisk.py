@@ -35,9 +35,9 @@ class Coordinate:
 
 
 class FerryMover:
-    def __init__(self, wayPoint: Coordinate, instructions: List[Instruction]):
+    def __init__(self, waypoint: Coordinate, instructions: List[Instruction]):
         self.position: Coordinate = Coordinate(0, 0)
-        self.wayPoint = wayPoint
+        self.waypoint = waypoint
         self.instructions = instructions
 
     def followInstructions(self):
@@ -48,11 +48,9 @@ class FerryMover:
         if instruction.action in [compass.value for compass in Compass]:
             self.handleCompass(instruction)
         elif instruction.action == Direction.RIGHT.value:
-            for i in range(0, instruction.value // 90):
-                self.turnRight()
+            self.turnRight(instruction.value)
         elif instruction.action == Direction.LEFT.value:
-            for i in range(0, instruction.value // 90):
-                self.turnLeft()
+            self.turnLeft(instruction.value)
         elif instruction.action == Move.FORWARD.value:
             self.moveForward(instruction.value)
         else:
@@ -68,31 +66,32 @@ class FerryMover:
         elif instruction.action == Compass.EAST.value:
             self.position.x += instruction.value
 
-    def turnRight(self):
-        self.wayPoint.x, self.wayPoint.y = self.wayPoint.y, self.wayPoint.x * -1
+    def turnRight(self, degree):
+        for i in range(0, degree // 90):
+            self.waypoint.x, self.waypoint.y = self.waypoint.y, self.waypoint.x * -1
 
-    def turnLeft(self):
+    def turnLeft(self, degree):
         for i in range(0, 3):
-            self.turnRight()
+            self.turnRight(degree)
 
     def moveForward(self, value: int):
-        self.position.x += self.wayPoint.x * value
-        self.position.y += self.wayPoint.y * value
+        self.position.x += self.waypoint.x * value
+        self.position.y += self.waypoint.y * value
 
     def getManhattanDistanceFromOrigin(self):
         return abs(self.position.x) + abs(self.position.y)
 
 
-class FerryMoverWithRelativeWayPoint(FerryMover):
+class FerryMoverWithRelativeWaypoint(FerryMover):
     def handleCompass(self, instruction: Instruction):
         if instruction.action == Compass.NORTH.value:
-            self.wayPoint.y += instruction.value
+            self.waypoint.y += instruction.value
         elif instruction.action == Compass.SOUTH.value:
-            self.wayPoint.y -= instruction.value
+            self.waypoint.y -= instruction.value
         elif instruction.action == Compass.WEST.value:
-            self.wayPoint.x -= instruction.value
+            self.waypoint.x -= instruction.value
         elif instruction.action == Compass.EAST.value:
-            self.wayPoint.x += instruction.value
+            self.waypoint.x += instruction.value
 
 
 def getInstructions(inputFile: str):
@@ -112,13 +111,13 @@ def main():
     ferryMover.followInstructions()
     print(ferryMover.getManhattanDistanceFromOrigin())  # 1010
 
-    ferryMoverWithRelativeWayPoint = FerryMoverWithRelativeWayPoint(Coordinate(10, 1), instructions)
-    ferryMoverWithRelativeWayPoint.followInstructions()
-    print(ferryMoverWithRelativeWayPoint.getManhattanDistanceFromOrigin())  # 52742
+    ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(Coordinate(10, 1), instructions)
+    ferryMoverWithRelativeWaypoint.followInstructions()
+    print(ferryMoverWithRelativeWaypoint.getManhattanDistanceFromOrigin())  # 52742
 
 
 class FerryMoversTester(unittest.TestCase):
-    def test_getManhattanDistance_setWayPoint_correctDistanceReturned(self):
+    def test_getManhattanDistance_setWaypoint_correctDistanceReturned(self):
         instructions = getInstructions(TEST_INPUT_FILE)
         ferryMover = FerryMover(Coordinate(1, 0), instructions)
         ferryMover.followInstructions()
@@ -126,9 +125,9 @@ class FerryMoversTester(unittest.TestCase):
 
     def test_getManhattanDistance_relativeWaypoint_correctDistanceReturned(self):
         instructions = getInstructions(TEST_INPUT_FILE)
-        ferryMoverWithRelativeWayPoint = FerryMoverWithRelativeWayPoint(Coordinate(10, 1), instructions)
-        ferryMoverWithRelativeWayPoint.followInstructions()
-        self.assertEqual(286, ferryMoverWithRelativeWayPoint.getManhattanDistanceFromOrigin())
+        ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(Coordinate(10, 1), instructions)
+        ferryMoverWithRelativeWaypoint.followInstructions()
+        self.assertEqual(286, ferryMoverWithRelativeWaypoint.getManhattanDistanceFromOrigin())
 
 
 if __name__ == '__main__':
