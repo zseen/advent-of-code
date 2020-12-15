@@ -114,7 +114,7 @@ def getInput(inputFile: str):
                         numPartOfMemoryAddress.append(char)
                 memoryAddress = int("".join(numPartOfMemoryAddress))
                 val = int(line[1].strip("\n"))
-                memoryAddressMasker.addMemoryAddressWithMaskedAddressAndValue(memoryAddress)
+                memoryAddressMasker.addMemoryAddressWithMaskedAddressAndValue(memoryAddress, val)
 
     return allMasksToAddresses
 
@@ -124,10 +124,10 @@ class MemoryAddressMasker:
         self.mask = mask
         self.memoryAddressesAndValuesWithMaskedMemoryAddresses = []
 
-    def addMemoryAddressWithMaskedAddressAndValue(self, address: int):
+    def addMemoryAddressWithMaskedAddressAndValue(self, address: int, val: int):
         maskedAddressesFromAddress = self.getPossibleMaskedAddresses(address)
         for maskedAddress in maskedAddressesFromAddress:
-            self.memoryAddressesAndValuesWithMaskedMemoryAddresses.append(MemoryAddressAndMaskedAddress(maskedAddress, maskedAddress))
+            self.memoryAddressesAndValuesWithMaskedMemoryAddresses.append(MemoryAddressAndMaskedAddress(maskedAddress, val))
 
     def getPossibleMaskedAddresses(self, address):
         binaryValue: str = ("{0:b}".format(address))
@@ -202,11 +202,32 @@ class AllMemoryAddressesToModifiedAddresses:
     def getAllMemoryAddressesToMaskedAddresses(self):
         return self.memoryAddressesToModifiedAddresses
 
+    def getLiterallyAllAddressesWithMaskedAddresses(self):
+        allAddressesWithMaskedAddresses = []
+        for memoryAddressMasker in self.memoryAddressesToModifiedAddresses:
+            for memoryAddressAndMaskedAddress in (memoryAddressMasker.memoryAddressesAndValuesWithMaskedMemoryAddresses):
+                allAddressesWithMaskedAddresses.append(memoryAddressAndMaskedAddress)
+        return allAddressesWithMaskedAddresses
+
+
+    def sumAllUniqueMaskedAddresses(self):
+        allAWM = self.getLiterallyAllAddressesWithMaskedAddresses()
+        visited = set()
+        uniqueMaskedSum = 0
+        for memoryAddressAndMaskedAddress in allAWM[::-1]:
+            if memoryAddressAndMaskedAddress.memoryAddress not in visited:
+                uniqueMaskedSum += memoryAddressAndMaskedAddress.maskedAddress
+            visited.add(memoryAddressAndMaskedAddress.memoryAddress)
+
+        return uniqueMaskedSum
+
+
+
 
 class MemoryAddressAndMaskedAddress:
-    def __init__(self, memoryAddress: int, maskedAddress: str):
+    def __init__(self, memoryAddress: int, maskedAddress: int):
         self.memoryAddress = memoryAddress
-        self.maskedAddress: str = maskedAddress
+        self.maskedAddress = maskedAddress
 
 
 
@@ -220,18 +241,15 @@ testPartTwoInput = getInput(TEST_INPUT_PART_TWO)
     #for c in x.memoryAddressesAndValuesWithMaskedMemoryAddresses:
         #print(c.memoryAddress)
 
-allMemoryAddressesToModifiedAddresses = AllMemoryAddressesToModifiedAddresses(testPartTwoInput)
-x = allMemoryAddressesToModifiedAddresses.getAllMemoryAddressesToMaskedAddresses()
-for data in x:
-    print(data.memoryAddressesAndValuesWithMaskedMemoryAddresses)
-    for c in data.memoryAddressesAndValuesWithMaskedMemoryAddresses:
-        print(c.memoryAddress, c.maskedAddress)
 
 
 #### TODO:
 # only sum unique addressed masked addresses in AllMemoryAddressesToModifiedAddresses
 
 
+innputforsecondPart = getInput(INPUT_FILE)
+allMemoryAddressesToModifiedAddresses = AllMemoryAddressesToModifiedAddresses(innputforsecondPart)
+print(allMemoryAddressesToModifiedAddresses.sumAllUniqueMaskedAddresses())
 
 
 
