@@ -24,8 +24,8 @@ def getCurrentWaitTime(earliestTimestamp: int, busID: int) -> int:
     if currentDivisionResult * busID == earliestTimestamp:
         return 0
 
-    currentWaitTime = (currentDivisionResult + 1) * busID - earliestTimestamp
-    return currentWaitTime
+    return (currentDivisionResult + 1) * busID - earliestTimestamp
+
 
 
 class EarliestTimestampFinder:
