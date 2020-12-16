@@ -6,134 +6,7 @@ TEST_INPUT = "test_input.txt"
 TEST_INPUT_PART_TWO = "test_input_two.txt"
 
 
-class MaskingHandler:
-    def __init__(self, mask: str, shouldGetMaskedAddresses: bool):
-        self.mask = mask
-        self._addressesAndValuesWithMaskedValues: List[MemoryAddressToValue] = []
-        self.shouldGetMaskedAddresses = shouldGetMaskedAddresses
-
-    def addAddressAndValueWithMaskedValue(self, memoryAddress: int, value: int):
-        maskedValue = self._createMaskedValue(value)
-        if self.shouldGetMaskedAddresses:
-            maskedAddressesFromAddress = self._getPossibleMaskedAddresses(memoryAddress)
-            for maskedAddress in maskedAddressesFromAddress:
-                memoryAddressToValueWithMaskedValue = MemoryAddressToValueWithMaskedValue(memoryAddress, value,
-                                                                                          maskedAddress, maskedValue)
-                self._addressesAndValuesWithMaskedValues.append(memoryAddressToValueWithMaskedValue)
-        else:
-            memoryAddressToValueWithMaskedValue = MemoryAddressToValueWithMaskedValue(memoryAddress, value,
-                                                                                      -1, maskedValue)
-            self._addressesAndValuesWithMaskedValues.append(memoryAddressToValueWithMaskedValue)
-
-    def getAddressesAndValuesWithMaskedValues(self):
-        return self._addressesAndValuesWithMaskedValues
-
-    def _createMaskedValue(self, value) -> int:
-        binaryValue: str = "{0:b}".format(value)
-        paddedBinaryValue = binaryValue.rjust(36, "0")
-
-        maskedBinaryString = ""
-        for i in range(0, len(self.mask)):
-            if self.mask[i] == "1":
-                maskedBinaryString += "1"
-            elif self.mask[i] == "0":
-                maskedBinaryString += "0"
-            else:
-                maskedBinaryString += paddedBinaryValue[i]
-
-        return int(maskedBinaryString, 2)
-
-    def _getSmallestPossibleNumFromMaskedAddress(self, maskedBinaryAddress: str):
-        smallestBinaryNumToGetWithFloatingMask: str = maskedBinaryAddress.replace('X', '0')
-        return int(smallestBinaryNumToGetWithFloatingMask, 2)
-
-    def _getPossibleMaskedAddresses(self, address):
-        addressInBinary: str = ("{0:b}".format(address))
-        addressInBinaryPadded = addressInBinary.rjust(36, "0")
-
-        maskedBinaryAddress = ""
-        xPositionsInMask = []
-        for i in range(0, len(self.mask)):
-            if self.mask[i] == "X":
-                maskedBinaryAddress += "X"
-                xPositionsInMask.append(35 - i)
-            elif self.mask[i] == "1":
-                maskedBinaryAddress += "1"
-            else:
-                maskedBinaryAddress += addressInBinaryPadded[i]
-
-        numsToCombineAndAddToSmallestMaskedAddress = [2 ** xPosition for xPosition in xPositionsInMask]
-        smallestPossibleNumFromMaskedAddress = self._getSmallestPossibleNumFromMaskedAddress(maskedBinaryAddress)
-        allPossibleMaskedAddresses = self.getMaskedAddresses(smallestPossibleNumFromMaskedAddress,
-                                                             numsToCombineAndAddToSmallestMaskedAddress)
-
-        return allPossibleMaskedAddresses
-
-    def getMaskedAddresses(self, smallestPossibleNumFromMaskedAddress: int, numsToCombineAndAddToSmallestPossibleNum):
-        maskedAddresses = []
-
-        def func(soFar, gen, res):
-            if len(gen) == 0:
-                res.append(soFar)
-                maskedAddresses.append(int(soFar))
-                return
-
-            func(soFar + gen[0], gen[1:], res)
-            func(soFar, gen[1:], res)
-
-        func(smallestPossibleNumFromMaskedAddress, numsToCombineAndAddToSmallestPossibleNum, [])
-
-        return maskedAddresses
-
-
-class MaskingHandlersCollectionOperator:
-    def __init__(self, allMasksToAddressesAndValues: Dict[str, List[Tuple[int, int]]], shouldMaskAddress: bool):
-        self.allMasksToAddressesAndValues = allMasksToAddressesAndValues
-        self.shouldMaskAddress = shouldMaskAddress
-        self.allMaskingHandlers = self.getAllMaskingHandlers()
-        self.allAddressesWithValuesAfterMasking = self.getAllAddressesAndValuesAfterMasking()
-
-    def getAllMaskingHandlers(self):
-        allMaskingHandlers: List[MaskingHandler] = []
-        for mask, addressesAndValues in self.allMasksToAddressesAndValues.items():
-            maskingHandler = MaskingHandler(mask, self.shouldMaskAddress)
-            for addressAndValue in addressesAndValues:
-                maskingHandler.addAddressAndValueWithMaskedValue(addressAndValue[0], addressAndValue[1])
-            allMaskingHandlers.append(maskingHandler)
-        return allMaskingHandlers
-
-    def getAllAddressesAndValuesAfterMasking(self):
-        allAddressesAndWaluesAfterMasking = []
-        for maskingHandler in self.allMaskingHandlers:
-            addressesWithValues = maskingHandler.getAddressesAndValuesWithMaskedValues()
-            for addressWithValue in addressesWithValues:
-                allAddressesAndWaluesAfterMasking.append(addressWithValue)
-        return allAddressesAndWaluesAfterMasking
-
-    def sumMaskedValuesInAllAddresses(self):
-        addressesWithMaskedValueAlreadySummed = set()
-        maskedValuesSum = 0
-
-        for addressesAndValuesWithMaskedValues in self.allAddressesWithValuesAfterMasking[::-1]:
-            currentMemoryAddress = addressesAndValuesWithMaskedValues.getMemoryAddress()
-            if currentMemoryAddress not in addressesWithMaskedValueAlreadySummed:
-                maskedValuesSum += addressesAndValuesWithMaskedValues.getMaskedValue()
-            addressesWithMaskedValueAlreadySummed.add(currentMemoryAddress)
-        return maskedValuesSum
-
-    def sumAllUniqueMaskedAddresses(self):
-        maskedAddressesAlreadyVisited = set()
-        maskedAddressValueSum = 0
-        for addressesWithValue in self.allAddressesWithValuesAfterMasking[::-1]:
-            currentAddress = addressesWithValue.getMaskedAddress()
-            if currentAddress not in maskedAddressesAlreadyVisited:
-                maskedAddressValueSum += addressesWithValue.getValue()
-            maskedAddressesAlreadyVisited.add(currentAddress)
-
-        return maskedAddressValueSum
-
-
-class MemoryAddressToValueWithMaskedValue:
+class MemoryAddressAndValue:
     def __init__(self, memoryAddress: int, value: int, maskedAddress: int, maskedValue: int):
         self._memoryAddress = memoryAddress
         self._value = value
@@ -153,6 +26,132 @@ class MemoryAddressToValueWithMaskedValue:
         return self._maskedValue
 
 
+class MaskingHandler:
+    def __init__(self, mask: str, shouldMaskAddress: bool):
+        self.mask = mask
+        self._addressesAndValuesAfterMasking: List[MemoryAddressAndValue] = []
+        self.shouldMaskAddress = shouldMaskAddress
+
+    def getAddressesAndValuesAfterMasking(self) -> List[MemoryAddressAndValue]:
+        return self._addressesAndValuesAfterMasking
+
+    def addAddressAndValueForMasking(self, memoryAddress: int, value: int) -> None:
+        maskedValue: int = self._createMaskedValue(value)
+        if self.shouldMaskAddress:
+            maskedAddressesFromAddress = self._getPossibleMaskedAddresses(memoryAddress)
+            for maskedAddress in maskedAddressesFromAddress:
+                memoryAddressAndValueWithBothMasked = MemoryAddressAndValue(memoryAddress, value,
+                                                                            maskedAddress, maskedValue)
+                self._addressesAndValuesAfterMasking.append(memoryAddressAndValueWithBothMasked)
+        else:
+            memoryAddressAndValueWithMaskedValue = MemoryAddressAndValue(memoryAddress, value,
+                                                                         -1, maskedValue)
+            self._addressesAndValuesAfterMasking.append(memoryAddressAndValueWithMaskedValue)
+
+    def _createMaskedValue(self, value: int) -> int:
+        binaryValue: str = "{0:b}".format(value)
+        paddedBinaryValue: str = binaryValue.rjust(36, "0")
+
+        maskedBinaryString = ""
+        for i in range(0, len(self.mask)):
+            if self.mask[i] == "1" or self.mask[i] == "0":
+                maskedBinaryString += self.mask[i]
+            else:
+                maskedBinaryString += paddedBinaryValue[i]
+
+        return int(maskedBinaryString, 2)
+
+    def _getPossibleMaskedAddresses(self, address):
+        maskedBinaryAddress: str = self._createMaskedAddress(address)
+        smallestPossibleNumFromMaskedAddress = self._getSmallestPossibleNumFromMaskedAddress(maskedBinaryAddress)
+        numsToCombineAndAddToSmallestMaskedAddress = [2 ** xPosition for xPosition in self._getXPositionsInMask()]
+        return self._getMaskedAddresses(smallestPossibleNumFromMaskedAddress,
+                                        numsToCombineAndAddToSmallestMaskedAddress)
+
+    def _createMaskedAddress(self, address: int) -> str:
+        addressInBinary: str = ("{0:b}".format(address))
+        addressInBinaryPadded = addressInBinary.rjust(36, "0")
+
+        maskedBinaryAddress = ""
+        for i in range(0, len(self.mask)):
+            if self.mask[i] == "X" or self.mask[i] == "1":
+                maskedBinaryAddress += self.mask[i]
+            else:
+                maskedBinaryAddress += addressInBinaryPadded[i]
+
+        return maskedBinaryAddress
+
+    def _getSmallestPossibleNumFromMaskedAddress(self, maskedBinaryAddress: str) -> int:
+        return int(maskedBinaryAddress.replace('X', '0'), 2)
+
+    def _getXPositionsInMask(self) -> List[int]:
+        return [35 - i for i in range(0, len(self.mask)) if self.mask[i] == "X"]
+
+    def _getMaskedAddresses(self, smallestPossibleNumFromMaskedAddress: int,
+                            numsToCombineAndAddToSmallestPossibleNum: List[int]) -> List[int]:
+        maskedAddresses = []
+
+        def generatePossibleNums(sumSoFar: int, availableNums: List[int]):
+            if len(availableNums) == 0:
+                maskedAddresses.append(int(sumSoFar))
+                return
+
+            generatePossibleNums(sumSoFar + availableNums[0], availableNums[1:])
+            generatePossibleNums(sumSoFar, availableNums[1:])
+
+        generatePossibleNums(smallestPossibleNumFromMaskedAddress, numsToCombineAndAddToSmallestPossibleNum)
+        return maskedAddresses
+
+
+class MaskingHandlersCollectionOperator:
+    def __init__(self, allMaskToAddressesAndValues: Dict[str, List[Tuple[int, int]]], shouldMaskAddress: bool):
+        self.allMaskToAddressesAndValues = allMaskToAddressesAndValues
+        self.shouldMaskAddress = shouldMaskAddress
+        self.allMaskingHandlers = self._createAllMaskingHandlers()
+        self.allAddressesWithValuesAfterMasking = self._getAllAddressesAndValuesAfterMasking()
+
+    def sumMaskedValuesInAddresses(self) -> int:
+        addressesWithMaskedValueAlreadySummed = set()
+        maskedValuesSum = 0
+
+        for addressesAndValuesWithMaskedValues in self.allAddressesWithValuesAfterMasking:
+            currentMemoryAddress = addressesAndValuesWithMaskedValues.getMemoryAddress()
+            if currentMemoryAddress not in addressesWithMaskedValueAlreadySummed:
+                maskedValuesSum += addressesAndValuesWithMaskedValues.getMaskedValue()
+            addressesWithMaskedValueAlreadySummed.add(currentMemoryAddress)
+
+        return maskedValuesSum
+
+    def sumValuesInMaskedAddresses(self) -> int:
+        maskedAddressesWithAlreadySummedValues = set()
+        maskedAddressValueSum = 0
+
+        for addressesWithValue in self.allAddressesWithValuesAfterMasking:
+            currentMaskedAddress = addressesWithValue.getMaskedAddress()
+            if currentMaskedAddress not in maskedAddressesWithAlreadySummedValues:
+                maskedAddressValueSum += addressesWithValue.getValue()
+            maskedAddressesWithAlreadySummedValues.add(currentMaskedAddress)
+
+        return maskedAddressValueSum
+
+    def _createAllMaskingHandlers(self) -> List[MaskingHandler]:
+        allMaskingHandlers: List[MaskingHandler] = []
+        for mask, addressesAndValues in self.allMaskToAddressesAndValues.items():
+            maskingHandler = MaskingHandler(mask, self.shouldMaskAddress)
+            for addressAndValue in addressesAndValues:
+                maskingHandler.addAddressAndValueForMasking(addressAndValue[0], addressAndValue[1])
+            allMaskingHandlers.append(maskingHandler)
+        return allMaskingHandlers
+
+    def _getAllAddressesAndValuesAfterMasking(self) -> List[MemoryAddressAndValue]:
+        allAddressesAndWaluesAfterMasking: List[MemoryAddressAndValue] = []
+        for maskingHandler in self.allMaskingHandlers:
+            addressesWithValues = maskingHandler.getAddressesAndValuesAfterMasking()
+            for addressWithValue in addressesWithValues:
+                allAddressesAndWaluesAfterMasking.append(addressWithValue)
+        return allAddressesAndWaluesAfterMasking[::-1]
+
+
 def getAllMasksToAddressesAndValues(inputFile: str):
     allMaskingData = {}
     with open(inputFile, "r") as inputFile:
@@ -165,10 +164,7 @@ def getAllMasksToAddressesAndValues(inputFile: str):
                     mask = line[1].strip("\n")
                     allMaskingData[mask] = []
                 else:
-                    memoryAddressDigits = []
-                    for char in line[0]:
-                        if char.isdigit():
-                            memoryAddressDigits.append(char)
+                    memoryAddressDigits = [char for char in line[0] if char.isdigit()]
                     memoryAddress = int("".join(memoryAddressDigits))
                     value = int(line[1].strip("\n"))
                     allMaskingData[mask].append((memoryAddress, value))
@@ -176,20 +172,33 @@ def getAllMasksToAddressesAndValues(inputFile: str):
     return allMaskingData
 
 
-allMasksToAddressesAndValues = getAllMasksToAddressesAndValues(TEST_INPUT)
-firstPart = MaskingHandlersCollectionOperator(allMasksToAddressesAndValues, False)
-x = firstPart.sumMaskedValuesInAllAddresses()
-print(x)  # 165
+def main():
+    allMasksToAddressesAndValues: Dict[str, List[Tuple[int, int]]] = getAllMasksToAddressesAndValues(INPUT_FILE)
 
-allMasksToAddressesAndValues = getAllMasksToAddressesAndValues(TEST_INPUT_PART_TWO)
-secondPart = MaskingHandlersCollectionOperator(allMasksToAddressesAndValues, True)
-x = secondPart.sumAllUniqueMaskedAddresses()
-print(x)  # 208
+    maskingOperatorWithoutMaskingAddress = MaskingHandlersCollectionOperator(allMasksToAddressesAndValues,
+                                                                             shouldMaskAddress=False)
+    print(maskingOperatorWithoutMaskingAddress.sumMaskedValuesInAddresses())  # 7997531787333
 
-mainRunPartOne = getAllMasksToAddressesAndValues(INPUT_FILE)
+    maskingOperatorWithMaskingAddresses = MaskingHandlersCollectionOperator(allMasksToAddressesAndValues,
+                                                                            shouldMaskAddress=True)
+    print(maskingOperatorWithMaskingAddresses.sumValuesInMaskedAddresses())  # 3564822193820
 
-c = MaskingHandlersCollectionOperator(mainRunPartOne, False)
-print(c.sumMaskedValuesInAllAddresses())  # 7997531787333
 
-v = MaskingHandlersCollectionOperator(mainRunPartOne, True)
-print(v.sumAllUniqueMaskedAddresses())  # 3564822193820
+class MaskingOperationsTester(unittest.TestCase):
+    def test_sumMaskedValuesInAddresses_addressesNotMasked_correctSumReturned(self):
+        allMasksToAddressesAndValues: Dict[str, List[Tuple[int, int]]] = getAllMasksToAddressesAndValues(TEST_INPUT)
+        maskingOperatorWithoutMaskingAddress = MaskingHandlersCollectionOperator(allMasksToAddressesAndValues,
+                                                                                 shouldMaskAddress=False)
+        self.assertEqual(165, maskingOperatorWithoutMaskingAddress.sumMaskedValuesInAddresses())
+
+    def test_sumValuesInMaskedAddresses_valuesNotMasked_correctSumReturned(self):
+        allMasksToAddressesAndValues: Dict[str, List[Tuple[int, int]]] = getAllMasksToAddressesAndValues(
+            TEST_INPUT_PART_TWO)
+        maskingOperatorWithMaskingAddress = MaskingHandlersCollectionOperator(allMasksToAddressesAndValues,
+                                                                              shouldMaskAddress=True)
+        self.assertEqual(208, maskingOperatorWithMaskingAddress.sumValuesInMaskedAddresses())
+
+
+if __name__ == '__main__':
+    # main()
+    unittest.main()
