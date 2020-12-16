@@ -28,18 +28,18 @@ class Instruction:
         self.value = value
 
 
-class Coordinate:
+class Coordinates:
     def __init__(self, x: int, y: int):
         self.x = x
         self.y = y
 
-COORDINATE_FOR_PART_ONE = Coordinate(1, 0)
-COORDINATE_FOR_PART_TWO = Coordinate(10, 1)
+COORDINATES_FOR_PART_ONE = Coordinates(1, 0)
+COORDINATES_FOR_PART_TWO = Coordinates(10, 1)
 
 
 class FerryMover:
-    def __init__(self, waypoint: Coordinate, instructions: List[Instruction]):
-        self.position: Coordinate = Coordinate(0, 0)
+    def __init__(self, waypoint: Coordinates, instructions: List[Instruction]):
+        self.position: Coordinates = Coordinates(0, 0)
         self.waypoint = waypoint
         self.instructions = instructions
 
@@ -110,11 +110,11 @@ def getInstructions(inputFile: str):
 def main():
     instructions = getInstructions(INPUT_FILE)
 
-    ferryMover = FerryMover(COORDINATE_FOR_PART_ONE, instructions)
+    ferryMover = FerryMover(COORDINATES_FOR_PART_ONE, instructions)
     ferryMover.followInstructions()
     print(ferryMover.getManhattanDistanceFromOrigin())  # 1010
 
-    ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(COORDINATE_FOR_PART_TWO, instructions)
+    ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(COORDINATES_FOR_PART_TWO, instructions)
     ferryMoverWithRelativeWaypoint.followInstructions()
     print(ferryMoverWithRelativeWaypoint.getManhattanDistanceFromOrigin())  # 52742
 
@@ -122,13 +122,13 @@ def main():
 class FerryMoversTester(unittest.TestCase):
     def test_getManhattanDistance_setWaypoint_correctDistanceReturned(self):
         instructions = getInstructions(TEST_INPUT_FILE)
-        ferryMover = FerryMover(COORDINATE_FOR_PART_ONE, instructions)
+        ferryMover = FerryMover(COORDINATES_FOR_PART_ONE, instructions)
         ferryMover.followInstructions()
         self.assertEqual(25, ferryMover.getManhattanDistanceFromOrigin())
 
     def test_getManhattanDistance_relativeWaypoint_correctDistanceReturned(self):
         instructions = getInstructions(TEST_INPUT_FILE)
-        ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(COORDINATE_FOR_PART_TWO, instructions)
+        ferryMoverWithRelativeWaypoint = FerryMoverWithRelativeWaypoint(COORDINATES_FOR_PART_TWO, instructions)
         ferryMoverWithRelativeWaypoint.followInstructions()
         self.assertEqual(286, ferryMoverWithRelativeWaypoint.getManhattanDistanceFromOrigin())
 
