@@ -1,78 +1,46 @@
 import unittest
+from typing import List
+from copy import deepcopy
 
-INPUT = [1,20,8,12,0,14]
+INPUT = [1, 20, 8, 12, 0, 14]
 TEST_INPUT = [0, 3, 6]
 
 UPPER_RANGE_FIRST_PART = 2020
 UPPER_RANGE_SECOND_PART = 30000000
 
 
-def play(inputArray, upperRange):
-    numsToSay = inputArray
-    numsToTurn = dict()
-    for i in range(len(inputArray)):
-        numsToTurn[inputArray[i]] = i + 1
+def getUpperRangethNum(initialNums: List[int], upperRange: int):
+    numsSaid = deepcopy(initialNums)
+    numsToTurnLastSaid = dict()
+    for i in range(len(numsSaid)):
+        numsToTurnLastSaid[numsSaid[i]] = i + 1
 
-    for i in range(len(inputArray)+1, upperRange + 1):
-        lastSaidNum = numsToSay[-1]
-        if lastSaidNum not in numsToTurn:
-            numsToSay.append(0)
+    for turnNum in range(len(numsSaid), upperRange):
+        lastSaidNum = numsSaid[-1]
+        if lastSaidNum not in numsToTurnLastSaid:
+            numsSaid.append(0)
         else:
-            lastTurnNumWasSaid = numsToTurn[lastSaidNum]
-            numsToSay.append(i - 1 - lastTurnNumWasSaid)
+            lastTurnNumWasSaid = numsToTurnLastSaid[lastSaidNum]
+            numsSaid.append(turnNum - lastTurnNumWasSaid)
+        numsToTurnLastSaid[lastSaidNum] = turnNum
 
-        numsToTurn[lastSaidNum] = i - 1
-
-
-    return numsToSay
+    return numsSaid[-1]
 
 
-#numsTest1 = play(TEST_INPUT, UPPER_RANGE_FIRST_PART)
-#print(numsTest1[-1])
-#
-# numsTest2 = play([1,3,2], UPPER_RANGE_FIRST_PART)
-# print(numsTest2[-1])
-#
-# numsTest3 = play([2,1,3], UPPER_RANGE_FIRST_PART)
-# print(numsTest3[-1])
-#
-# numsTest4 = play([2,3,1], UPPER_RANGE_FIRST_PART)
-# print(numsTest4[-1])
-#
-# numsTest5 = play([3,2,1], UPPER_RANGE_FIRST_PART)
-# print(numsTest5[-1])
-#
-# numsTest6 = play([3,1,2], UPPER_RANGE_FIRST_PART)
-# print(numsTest6[-1])
+def main():
+    print(getUpperRangethNum(INPUT, UPPER_RANGE_FIRST_PART))  # 492
+
+    print(getUpperRangethNum(INPUT, UPPER_RANGE_SECOND_PART))  # 63644
 
 
+class NumGameTester(unittest.TestCase):
+    def test_getUpperRangethNum_smallerRange_correctNumReturned(self):
+        self.assertEqual(436, getUpperRangethNum(TEST_INPUT, UPPER_RANGE_FIRST_PART))
+
+    def test_getUpperRangethNum_largerRange_correctNumReturned(self):
+        self.assertEqual(175594, getUpperRangethNum(TEST_INPUT, UPPER_RANGE_SECOND_PART))
 
 
-
-print("--------------------------------")
-numsMainRun = play(INPUT, UPPER_RANGE_FIRST_PART)
-print(numsMainRun[-1])
-print("--------------------------------")
-
-# numsTest1 = play(TEST_INPUT, UPPER_RANGE_SECOND_PART)
-# print(numsTest1[-1])
-#
-# numsTest2 = play([1,3,2], UPPER_RANGE_SECOND_PART)
-# print(numsTest2[-1])
-#
-# numsTest3 = play([2,1,3], UPPER_RANGE_SECOND_PART)
-# print(numsTest3[-1])
-#
-# numsTest4 = play([2,3,1], UPPER_RANGE_SECOND_PART)
-# print(numsTest4[-1])
-#
-# numsTest5 = play([3,2,1], UPPER_RANGE_SECOND_PART)
-# print(numsTest5[-1])
-#
-# numsTest6 = play([3,1,2], UPPER_RANGE_SECOND_PART)
-# print(numsTest6[-1])
-
-
-
-numsMainRun = play(INPUT, UPPER_RANGE_SECOND_PART)
-print(numsMainRun[-1])
+if __name__ == '__main__':
+    # main()
+    unittest.main()
