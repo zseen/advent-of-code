@@ -85,6 +85,10 @@ class NearbyTickets:
     def __init__(self, allNearbyTicketsInfo: List[List[int]]):
         self.allNearbyTicketsInfo = allNearbyTicketsInfo
 
+    def getValidTickets(self):
+        return self.allNearbyTicketsInfo
+
+
 
 def getInput(inputFile: str):
     nearbyTickets = []
@@ -100,9 +104,14 @@ def getInput(inputFile: str):
 
 # class TestTrain:
 #     def __init__(self):
-#         self.trainClass = [1, 2, 3, 5, 6, 7]
-#         self.row = [6, 7, 8, 9, 10, 11, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44]
-#         self.seat = [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 45, 46, 47, 48, 49, 50]
+#         # self.trainClass = [1, 2, 3, 5, 6, 7]
+#         # self.row = [6, 7, 8, 9, 10, 11, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44]
+#         # self.seat = [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 45, 46, 47, 48, 49, 50]
+#
+#         self.trainClass = extractNumList([0, 1, 4, 19])
+#
+#         self.row = extractNumList([ 0, 5, 8, 19])
+#         self.seat = extractNumList([0 ,13 , 16 ,19])
 #         self.allTrainDataCombined: set = self._flatten([self.trainClass, self.row, self.seat])
 #
 #     def _flatten(self, arrayToFlatten):
@@ -122,13 +131,92 @@ def getInput(inputFile: str):
 
 
 
-def findInvalidTickets(train: Train, nearbyTickets: NearbyTickets):
+def findInvalidTickets(train, nearbyTickets):
     invalidNumsSum = 0
     for ticketNearby in nearbyTickets.allNearbyTicketsInfo:
         for ticketInfo in ticketNearby:
             if ticketInfo not in train.allTrainDataCombined:
                 invalidNumsSum += ticketInfo
+                nearbyTickets.allNearbyTicketsInfo.remove(ticketInfo)
     return invalidNumsSum
+
+
+
+class PositionLocator(Train):
+
+    def positionPossibilityChecker(self, validNearbyTickets):
+        allTrainFields = [self.departureLocation, self.departureStation, self.departurePlatform, self.departureTrack, self.departureDate, self.departureTime,
+                                                                  self.arrivalLocation, self.arrivalStation, self.arrivalPlatform, self.arrivalTrack,
+                                                                  self.trainClass, self.duration, self.price, self.route, self.row, self.seat, self.train, self.trainType, self.wagon, self.zone]
+
+        print(print(len(allTrainFields)))
+
+        #allTrainFields = [self.trainClass, self.row, self.seat]
+        positionToField = dict()
+
+        for i in range(0, len(validNearbyTickets[0])):
+            iCanBe = []
+            for trainField in allTrainFields:
+                if self.canThisIndexBeThisField(validNearbyTickets, i, trainField):
+                    iCanBe.append(trainField)
+
+            positionToField[i] = iCanBe
+
+
+        return positionToField
+        #indexToTrainFeature = {0: "class", 1: "row", 2: "seat"}
+
+        indexToTrainFeature = {0: "departureLocation", 1: "departureStation", 2: "departurePlatform",
+                               3: "departureTrack", 4: "departureDate", 5: "departureTime",
+                               6: "arrivalLocation", 7: "arrivalStation", 8: "arrivalPlatform", 9: "arrivalTrack",
+                               10: "trainClass", 11: "duration", 12: "price", 13: "route", 14: "row", 15: "seat",
+                               16: "train", 17: "trainType", 18: "wagon", 19: "zone"}
+
+        foundFeatures = []
+
+
+        while len(foundFeatures) != len(allTrainFields):
+            currentFeatureFound = None
+            for position in positionToField:
+                if len(positionToField[position]) == 1:
+                    print("here?")
+
+                    currentPosition = positionToField[position][0]
+                    indexInAllTrainFields = self.lookupFieldIndexByArray(allTrainFields, currentPosition)
+                    foundFeatures.append(indexToTrainFeature[indexInAllTrainFields])
+                    currentFeatureFound = currentPosition
+
+                for subArray in positionToField[position]:
+                    if currentFeatureFound == subArray:
+                        positionToField[position].remove(currentFeatureFound)
+            print("here?")
+
+        return foundFeatures
+
+
+
+
+
+
+    def canThisIndexBeThisField(self, nearbyTicketsMemberArrayOfArrays, index, field):
+        for chunk in nearbyTicketsMemberArrayOfArrays:
+            v = chunk[index]
+            c = field
+            z = nearbyTicketsMemberArrayOfArrays
+            if chunk[index] not in field:
+                return False
+        return True
+
+
+    def lookupFieldIndexByArray(self, allTranFields, foundArray):
+        for i in range(len(allTranFields)):
+            if foundArray == allTranFields[i]:
+                return i
+
+
+
+
+
 
 
 
@@ -140,14 +228,33 @@ def main():
 
     # train = TestTrain()
     # nearbyTickets = TestNearbyTickets()
-    # invalidNumsSum = findInvalidTickets(train, nearbyTickets)
-    # print(invalidNumsSum)
+    # #invalidNumsSum = findInvalidTickets(train, nearbyTickets)
+    # pl = PositionLocator()
+    # x = pl.positionPossibilityChecker([[3,9,18],[15,1,5], [5,14,9], [11,12,13]])
+    # print(x)
 
     inputForNearbyTickets = getInput(NEARBY_TICKETS_INPUT)
     train = Train()
     nearbyTickets = NearbyTickets(inputForNearbyTickets)
-    invalidNumsSum = findInvalidTickets(train, nearbyTickets)
-    print(invalidNumsSum)
+    #print(len(nearbyTickets.allNearbyTicketsInfo))
+    x = findInvalidTickets(train, nearbyTickets)
+    print(x)
+    #print(len(nearbyTickets.allNearbyTicketsInfo))
+    m = MyTicket()
+    possLoc = PositionLocator()
+    #print(nearbyTickets.getValidTickets())
+    validTickets = nearbyTickets.getValidTickets()
+    validTickets.append(m.infoForPlace)
+    #print(validTickets)
+    x = possLoc.positionPossibilityChecker(nearbyTickets.getValidTickets())
+    all0z = []
+    for sub in validTickets:
+        all0z.append(sub[0])
+    print(all0z)
+
+    print(x)
+
+
 
 
 
