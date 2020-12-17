@@ -2,7 +2,8 @@ import unittest
 from typing import List, Dict
 
 TEST_INPUT = "test_input.txt"
-NEARBY_TICKETS_INPUT = "nearbyTickets.txt"
+TEST_INPUT_SECOND_PART = "test_input_second_part.txt"
+INPUT_FILE = "input.txt"
 
 def extractNumList(numList):
     lowestBound = numList[0]
@@ -11,26 +12,6 @@ def extractNumList(numList):
     uppestBound = numList[3]
     return [num for num in range(lowestBound, uppestBound + 1) if num <= upperBound or num >= lowerBound]
 
-DEPARTURE_LOCATION = extractNumList([45, 422 , 444, 950])
-DEPARTURE_STATION= extractNumList([36, 741, 752, 956])
-DEPARTURE_PLATFORM = extractNumList([46, 788, 806, 967])
-DEPARTURE_TRACK = extractNumList([46, 57, 70, 950])
-DEPARTURE_DATE = extractNumList([35, 99, 108, 974])
-DEPARTURE_TIME = extractNumList([42, 883, 903, 962])
-ARRIVAL_LOCATION = extractNumList([47, 83, 95, 953])
-ARRIVAL_STATION = extractNumList([31, 227, 240, 970])
-ARRIVAL_PLATFORM = extractNumList([48, 840, 853, 964])
-ARRIVAL_TRACK = extractNumList([49, 487, 499, 964])
-CLASS = extractNumList([33, 363, 381, 959])
-DURATION = extractNumList([35, 509, 522, 951])
-PRICE = extractNumList([38, 590, 601, 950])
-ROUTE = extractNumList([41, 266, 285, 962])
-ROW = extractNumList([44, 402, 419, 962])
-SEAT = extractNumList([41, 615, 634, 956])
-TRAIN = extractNumList([47, 156, 178, 954])
-TYPE =  extractNumList([44, 313, 338, 964])
-WAGON = extractNumList([30, 110, 133, 970])
-ZONE = extractNumList([38, 541, 550, 965])
 
 
 def getInput(inputFile: str):
@@ -42,7 +23,6 @@ def getInput(inputFile: str):
                 trainPropertiesAndMyTicketAndTicketsNearby[-1].append(line.strip("\n"))
             else:
                 trainPropertiesAndMyTicketAndTicketsNearby.append([])
-    print(trainPropertiesAndMyTicketAndTicketsNearby)
     return trainPropertiesAndMyTicketAndTicketsNearby
 
 def handleRawInput(rawTrainOwnTicketNearbyTickets: [[str]]):
@@ -56,6 +36,7 @@ def handleRawInput(rawTrainOwnTicketNearbyTickets: [[str]]):
     myTicket = parsingHelper(rawTrainOwnTicketNearbyTickets[1][1])
 
     nearbyTickets = [parsingHelper(ticket) for ticket in rawTrainOwnTicketNearbyTickets[2][1:]]
+    nearbyTickets.append(myTicket)
 
     return allTrainPropertiesToValues, myTicket, nearbyTickets
 
@@ -79,28 +60,94 @@ def sumInvalidValuesInTicketsNearby(trainProperties: List[Dict[str, List[int]]],
 
     return invalidTicketsValues
 
-def removeInvalidTicketsFromNearbyTickets(nearbyTickets: List[List[int]]):
+def removeInvalidTicketsFromNearbyTickets(trainProperties: List[Dict[str, List[int]]], nearbyTickets: List[List[int]]):
     ticketsToRemove = []
-
     for ticket in nearbyTickets:
         for ticketData in ticket:
+            isTicketDataValid = False
             for trainProperty in trainProperties:
                 for trainPropertyName, propertyData in trainProperty.items():
-                    if ticketData not in propertyData:
-                        ticketsToRemove.append(ticket)
+                    if ticketData in propertyData:
+                        isTicketDataValid = True
                         break
+
+
+            if not isTicketDataValid:
+                ticketsToRemove.append(ticket)
+                break
+            continue
 
     for item in ticketsToRemove:
         nearbyTickets.remove(item)
     return nearbyTickets
 
+def getPositionToPossibleTrainFields(trainProperties: List[Dict[str, List[int]]], validNearbyTickets: List[List[int]]):
+    positionToPossibleFields = {}
+
+    for position in range(0, len(validNearbyTickets[0])):
+            possibleFieldsAtPosition = []
+            for trainPropertyToData in trainProperties:
+                for trainProperty, propertyData in trainPropertyToData.items():
+                    if canThisIndexBeThisField(validNearbyTickets, position, propertyData):
+                        possibleFieldsAtPosition.append(trainProperty)
+
+            positionToPossibleFields[position] = possibleFieldsAtPosition
+    return positionToPossibleFields
+
+def canThisIndexBeThisField(nearbyTickets: List[List[int]], index: int, property: List[int]):
+    for ticket in nearbyTickets:
+        if ticket[index] not in property:
+            return False
+    return True
+
+
+def getTrainFieldPositionInTicket(positionToPossibleFields: Dict[int, List[str]]):
+    currentFeatureFound: str = ""
+    locatedProperties: List[str] = [""] * len(positionToPossibleFields)
+    allLocatedPropertiesSoFar: set[str] = set()
+
+    for i in range(1, len(positionToPossibleFields) + 1):
+        for position in positionToPossibleFields:
+            if len(positionToPossibleFields[position]) == i:
+                properties = positionToPossibleFields[position]
+                for property in properties:
+                    if property not in allLocatedPropertiesSoFar:
+                        currentFeatureFound = property
+                locatedProperties[position]=(currentFeatureFound)
+                allLocatedPropertiesSoFar.add(currentFeatureFound)
+                break
+    return locatedProperties
+
+def getDepartureIndexesInTrainPropertiesPositionsOnTicket(allProperties):
+    return [i for i in range(len(allProperties)) if "departure" in allProperties[i]]
+
+
+def multiplyDeparturePropertiesInMyTicket(allProperties: List[str], myTicket):
+    indexesForDeparture = getDepartureIndexesInTrainPropertiesPositionsOnTicket(allProperties)
+
+    product = 1
+    for index in indexesForDeparture:
+        product *= myTicket[index]
+    return product
 
 
 def main():
-    rawInput = getInput(TEST_INPUT)
+    rawInput = getInput(INPUT_FILE)
     train, myTicket, nearbyTickets = handleRawInput(rawInput)
-    print(nearbyTickets)
-    print(sumInvalidValuesInTicketsNearby(train, nearbyTickets))
+    #print(nearbyTickets)
+    #print(sumInvalidValuesInTicketsNearby(train, nearbyTickets))
+    nearbyTicketsFiltered = removeInvalidTicketsFromNearbyTickets(train, nearbyTickets)
+    #print(nearbyTicketsFiltered)
+    x = getPositionToPossibleTrainFields(train, nearbyTicketsFiltered)
+
+    v = getTrainFieldPositionInTicket(x)
+    print(v)
+    print(len(set(v)))
+    print(getDepartureIndexesInTrainPropertiesPositionsOnTicket(v))
+    c = multiplyDeparturePropertiesInMyTicket(v, myTicket)
+    print(c)
+
+
 
 
 
