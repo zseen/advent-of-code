@@ -1,9 +1,10 @@
 import unittest
 from typing import List, Dict
 
-TEST_INPUT = "test_input.txt"
-TEST_INPUT_SECOND_PART = "test_input_second_part.txt"
 INPUT_FILE = "input.txt"
+TEST_INPUT_FIRST_PART = "test_input.txt"
+TEST_INPUT_SECOND_PART = "test_input_second_part.txt"
+TRAIN_PROPERTIES_DEPARTURE_PREFIX = "departure"
 
 
 def handleInput(inputFile: str):
@@ -111,7 +112,7 @@ def canPropertyBeAtPosition(nearbyTickets: List[List[int]], position: int, prope
 
 
 def getTrainPropertyPositionInTicket(positionToPossibleProperties: Dict[int, List[str]]):
-    currentFeatureFound: str = ""
+    currentPropertyFound: str = ""
     locatedProperties: List[str] = [""] * len(positionToPossibleProperties)
     allLocatedPropertiesSoFar: set[str] = set()
 
@@ -121,9 +122,9 @@ def getTrainPropertyPositionInTicket(positionToPossibleProperties: Dict[int, Lis
                 properties = positionToPossibleProperties[position]
                 for property in properties:
                     if property not in allLocatedPropertiesSoFar:
-                        currentFeatureFound = property
-                locatedProperties[position] = (currentFeatureFound)
-                allLocatedPropertiesSoFar.add(currentFeatureFound)
+                        currentPropertyFound = property
+                locatedProperties[position] = currentPropertyFound
+                allLocatedPropertiesSoFar.add(currentPropertyFound)
                 break
     return locatedProperties
 
@@ -137,7 +138,7 @@ def multiplyDeparturePropertiesInMyTicket(allProperties: List[str], myTicket):
 
 
 def getDepartureIndexesInTrainPropertiesPositionsOnTicket(allProperties):
-    return [i for i in range(len(allProperties)) if "departure" in allProperties[i]]
+    return [i for i in range(len(allProperties)) if TRAIN_PROPERTIES_DEPARTURE_PREFIX in allProperties[i]]
 
 
 def main():
@@ -145,11 +146,27 @@ def main():
     train, myTicket, nearbyTickets = parseInput(rawInput)
     invalidTicketValuesSum = sumInvalidValuesInTicketsNearby(train, nearbyTickets)
     print(invalidTicketValuesSum)  # 21071
+
     trainPropertiesPositionsOnTicket = locateTrainPropertiesOnTickets(train, nearbyTickets)
     departurePropertiesProductOnMyTicket = multiplyDeparturePropertiesInMyTicket(trainPropertiesPositionsOnTicket,
                                                                                  myTicket)
     print(departurePropertiesProductOnMyTicket)  # 3429967441937
 
 
+class TrainPropertyLocatorTester(unittest.TestCase):
+    def test_sumInvalidValuesInTicketsNearby_correctSumReturned(self):
+        rawInput = handleInput(TEST_INPUT_FIRST_PART)
+        train, myTicket, nearbyTickets = parseInput(rawInput)
+        invalidTicketValuesSum = sumInvalidValuesInTicketsNearby(train, nearbyTickets)
+        self.assertEqual(71, invalidTicketValuesSum)
+
+    def test_locateTrainPropertiesOnTickets_correctProductReturned(self):
+        rawInput = handleInput(TEST_INPUT_SECOND_PART)
+        train, myTicket, nearbyTickets = parseInput(rawInput)
+        trainPropertiesPositionsOnTicket = locateTrainPropertiesOnTickets(train, nearbyTickets)
+        self.assertEqual(["row", "class", "seat"], trainPropertiesPositionsOnTicket)
+
+
 if __name__ == '__main__':
-    main()
+    # main()
+    unittest.main()
