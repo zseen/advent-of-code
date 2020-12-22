@@ -6,25 +6,25 @@ TEST_INPUT_FIRST_PART = "test_input.txt"
 TEST_INPUT_SECOND_PART = "test_input_second_part.txt"
 TRAIN_PROPERTIES_DEPARTURE_PREFIX = "departure"
 
-TrainPropertiesToValuesFormat = List[Dict[str, List[int]]]
-TicketFormat = List[int]
-NearbyTicketsFormat = List[List[int]]
+TrainPropertiesToValuesType = List[Dict[str, List[int]]]
+TicketType = List[int]
+NearbyTicketsType = List[List[int]]
 
 
 class TrainTicketPositionExtractor:
-    def __init__(self, trainProperties: TrainPropertiesToValuesFormat, ownTicket: TicketFormat,
-                 nearbyTickets: NearbyTicketsFormat):
+    def __init__(self, trainProperties: TrainPropertiesToValuesType, ownTicket: TicketType,
+                 nearbyTickets: NearbyTicketsType):
         self.trainProperties = trainProperties
         self.ownTicket = ownTicket
         self.nearbyTickets = nearbyTickets
 
-    def sumInvalidValuesInTicketsNearby(self):
-        invalidTicketsValues = 0
+    def getSumOfNearbyInvalidTicketValues(self):
+        sumOfNearbyInvalidTicketValues = 0
         for ticket in self.nearbyTickets:
             for ticketData in ticket:
                 if not self.isTicketDataValid(ticketData):
-                    invalidTicketsValues += ticketData
-        return invalidTicketsValues
+                    sumOfNearbyInvalidTicketValues += ticketData
+        return sumOfNearbyInvalidTicketValues
 
     def isTicketDataValid(self, ticketData: int) -> bool:
         for trainProperty in self.trainProperties:
@@ -34,7 +34,7 @@ class TrainTicketPositionExtractor:
                 return True
         return False
 
-    def locateTrainPropertiesOnTickets(self) -> List[str]:
+    def findTrainPropertiesOnTickets(self) -> List[str]:
         self.removeInvalidTicketsFromNearbyTickets()
         positionToPossibleTrainProperty = self.getPositionToPossibleTrainProperties()
         return self.getTrainPropertyPositionInTicket(positionToPossibleTrainProperty)
@@ -53,14 +53,16 @@ class TrainTicketPositionExtractor:
         positionToPossibleProperties: Dict[int, List[str]] = {}
 
         for position in range(0, len(self.nearbyTickets[0])):
-            possiblePropertiesAtPosition = []
-            for trainPropertyToData in self.trainProperties:
-                for trainProperty, propertyData in trainPropertyToData.items():
-                    if self.canPropertyBeAtPosition(position, propertyData):
-                        possiblePropertiesAtPosition.append(trainProperty)
-
-            positionToPossibleProperties[position] = possiblePropertiesAtPosition
+            positionToPossibleProperties[position] = self.getPossibleTrainPropertiesAtPosition(position)
         return positionToPossibleProperties
+
+    def getPossibleTrainPropertiesAtPosition(self, position: int):
+        possiblePropertiesAtPosition = []
+        for trainPropertyToData in self.trainProperties:
+            for trainProperty, propertyData in trainPropertyToData.items():
+                if self.canPropertyBeAtPosition(position, propertyData):
+                    possiblePropertiesAtPosition.append(trainProperty)
+        return possiblePropertiesAtPosition
 
     def canPropertyBeAtPosition(self, position: int, validValues: List[int]) -> bool:
         for ticket in self.nearbyTickets:
@@ -70,20 +72,24 @@ class TrainTicketPositionExtractor:
 
     def getTrainPropertyPositionInTicket(self, positionToPossibleProperties: Dict[int, List[str]]) -> List[str]:
         locatedProperties: List[str] = [""] * len(positionToPossibleProperties)
-        currentPropertyFound: str = ""
 
-        for i in range(1, len(positionToPossibleProperties) + 1):
+        for _ in range(1, len(positionToPossibleProperties) + 1):
             for position in positionToPossibleProperties:
                 if len(positionToPossibleProperties[position]) == 1:
                     currentPropertyFound = positionToPossibleProperties[position][0]
                     locatedProperties[position] = currentPropertyFound
-
-                if currentPropertyFound in positionToPossibleProperties[position]:
-                    positionToPossibleProperties[position].remove(currentPropertyFound)
+                    self.removePropertyFromAllPositionToPossibleProperties(positionToPossibleProperties,
+                                                                           currentPropertyFound)
 
         return locatedProperties
 
-    def multiplyDeparturePropertiesInMyTicket(self, allProperties: List[str]) -> int:
+    def removePropertyFromAllPositionToPossibleProperties(self, positionToPossibleProperties: Dict[int, List[str]],
+                                                          currentPropertyFound: str) -> None:
+        for position in positionToPossibleProperties:
+            if currentPropertyFound in positionToPossibleProperties[position]:
+                positionToPossibleProperties[position].remove(currentPropertyFound)
+
+    def getProductOfDeparturePropertiesInMyTicket(self, allProperties: List[str]) -> int:
         indexesForDeparture = self.getDepartureIndexesOnTicket(allProperties)
         product = 1
         for index in indexesForDeparture:
@@ -94,30 +100,26 @@ class TrainTicketPositionExtractor:
         return [i for i in range(len(allProperties)) if TRAIN_PROPERTIES_DEPARTURE_PREFIX in allProperties[i]]
 
 
-def handleInput(inputFile: str) -> List[List[str]]:
-    textSections: List[List[str]] = [[]]
+def createTextSectionsFromInput(inputFile: str) -> List[List[str]]:
     with open(inputFile, "r") as inputFile:
-        lines = inputFile.readlines()
-        for line in lines:
-            if line != "\n":
-                textSections[-1].append(line.strip("\n"))
-            else:
-                textSections.append([])
+        textToSplit = inputFile.read()
+        categories = textToSplit.split("\n\n")
+        textSections = [category.strip("\n").split("\n") for category in categories]
     return textSections
 
 
 def parseInput(textSections: List[List[str]]) -> Tuple[
-    TrainPropertiesToValuesFormat, TicketFormat, NearbyTicketsFormat]:
+    TrainPropertiesToValuesType, TicketType, NearbyTicketsType]:
     allTrainPropertiesToValues = []
     for trainProperty in textSections[0]:
         trainProperty = trainProperty.split(": ")
-        propertyDataFull: List[int] = extractNumList(helpParsing(trainProperty[1]))
+        propertyDataFull: List[int] = extractNumList(createTicketValuesFromDataRangeString(trainProperty[1]))
         propertyToValidDataRange = {trainProperty[0]: propertyDataFull}
         allTrainPropertiesToValues.append(propertyToValidDataRange)
 
-    myTicket = helpParsing(textSections[1][1])
+    myTicket = createTicketValuesFromDataRangeString(textSections[1][1])
 
-    nearbyTickets = [helpParsing(ticket) for ticket in textSections[2][1:]]
+    nearbyTickets = [createTicketValuesFromDataRangeString(ticket) for ticket in textSections[2][1:]]
     nearbyTickets.append(myTicket)
 
     return allTrainPropertiesToValues, myTicket, nearbyTickets
@@ -135,39 +137,41 @@ def extractNumList(numList) -> List[int]:
             num <= firstSectionUpperBound or num >= secondSectionLowerBound]
 
 
-def helpParsing(dataRange: str) -> List[int]:
+def createTicketValuesFromDataRangeString(dataRange: str) -> List[int]:
     dataRange = dataRange.replace("or", ",").replace("-", ",")
     return [int(num) for num in dataRange.split(",")]
 
 
 def main():
-    rawInput = handleInput(INPUT_FILE)
+    rawInput = createTextSectionsFromInput(INPUT_FILE)
     train, myTicket, nearbyTickets = parseInput(rawInput)
     trainTicketPositionExtractor = TrainTicketPositionExtractor(train, myTicket, nearbyTickets)
 
-    invalidTicketValuesSum = trainTicketPositionExtractor.sumInvalidValuesInTicketsNearby()
+    invalidTicketValuesSum = trainTicketPositionExtractor.getSumOfNearbyInvalidTicketValues()
     print(invalidTicketValuesSum)  # 21071
 
-    trainPropertiesPositionsOnTicket = trainTicketPositionExtractor.locateTrainPropertiesOnTickets()
-    departurePropertiesProductOnMyTicket = trainTicketPositionExtractor.multiplyDeparturePropertiesInMyTicket(
+    trainPropertiesPositionsOnTicket = trainTicketPositionExtractor.findTrainPropertiesOnTickets()
+    departurePropertiesProductOnMyTicket = trainTicketPositionExtractor.getProductOfDeparturePropertiesInMyTicket(
         trainPropertiesPositionsOnTicket)
     print(departurePropertiesProductOnMyTicket)  # 3429967441937
 
 
 class TrainPropertyLocatorTester(unittest.TestCase):
-    def test_sumInvalidValuesInTicketsNearby_correctSumReturned(self):
-        rawInput = handleInput(TEST_INPUT_FIRST_PART)
+    def test_getSumOfNearbyInvalidTicketValues_correctSumReturned(self):
+        rawInput = createTextSectionsFromInput(TEST_INPUT_FIRST_PART)
         train, myTicket, nearbyTickets = parseInput(rawInput)
         trainTicketPositionExtractor = TrainTicketPositionExtractor(train, myTicket, nearbyTickets)
-        invalidTicketValuesSum = trainTicketPositionExtractor.sumInvalidValuesInTicketsNearby()
+        invalidTicketValuesSum = trainTicketPositionExtractor.getSumOfNearbyInvalidTicketValues()
         self.assertEqual(71, invalidTicketValuesSum)
 
-    def test_locateTrainPropertiesOnTickets_correctProductReturned(self):
-        rawInput = handleInput(TEST_INPUT_SECOND_PART)
+    def test_getProductOfDeparturePropertiesInMyTicket_correctProductReturned(self):
+        rawInput = createTextSectionsFromInput(TEST_INPUT_SECOND_PART)
         train, myTicket, nearbyTickets = parseInput(rawInput)
         trainTicketPositionExtractor = TrainTicketPositionExtractor(train, myTicket, nearbyTickets)
-        trainPropertiesPositionsOnTicket = trainTicketPositionExtractor.locateTrainPropertiesOnTickets()
-        self.assertEqual(["row", "class", "seat"], trainPropertiesPositionsOnTicket)
+        trainPropertiesPositionsOnTicket = trainTicketPositionExtractor.findTrainPropertiesOnTickets()
+        departurePropertiesProductOnMyTicket = trainTicketPositionExtractor.getProductOfDeparturePropertiesInMyTicket(
+            trainPropertiesPositionsOnTicket)
+        self.assertEqual(1716, departurePropertiesProductOnMyTicket)
 
 
 if __name__ == '__main__':
