@@ -1,9 +1,12 @@
-from typing import List, Dict, Set
-from copy import deepcopy
+from typing import List, Dict, Set, Tuple
 from enum import Enum
+import unittest
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
+
+BOOT_PROCESS_CYCLE_COUNT = 6
+RawCoordinateNumsCollection = List[Tuple[int, int]]
 
 
 class CubeStatus(Enum):
@@ -30,64 +33,56 @@ class Coordinates:
         return self.x == other.x and self.y == other.y and self.z == other.z
 
 
-
-
-
-
 class ConwayCubesOperator:
     def __init__(self, activeCubesCoordinates: Set[Coordinates]):
-        self.activeCubesCoordinates = activeCubesCoordinates
+        self._activeCubesCoordinates = activeCubesCoordinates
 
-    def getActiveCubesInNextRound(self):
-        cubesToDelete = []
-        nextRoundActiveCubes = set(self.activeCubesCoordinates)
-        for activeCube in self.activeCubesCoordinates:
-            activeNeighborsCount = self.getActiveNeighborsCount(activeCube)
-            #print(activeNeighborsCount)
+    def getActiveCubesNum(self) -> int:
+        return len(self._activeCubesCoordinates)
+
+    def getActiveCubesInNextRound(self) -> Set[Coordinates]:
+        cubesToDelete: List[Coordinates] = []
+        nextRoundActiveCubes: Set[Coordinates] = set(self._activeCubesCoordinates)
+        for activeCube in self._activeCubesCoordinates:
+            activeNeighborsCount = self._getActiveNeighborsCount(activeCube)
             if activeNeighborsCount != 2 and activeNeighborsCount != 3:
-                cubesToDelete.append((activeCube))
+                cubesToDelete.append(activeCube)
 
-        for passiveCube in self.getNeighborsOfActiveCubes():
-            activeNeighborsCount = self.getActiveNeighborsCount(passiveCube) + 1
+        for inactiveCube in self._getNeighborsOfActiveCubes():
+            activeNeighborsCount = self._getActiveNeighborsCount(inactiveCube)
             if activeNeighborsCount == 3:
-                nextRoundActiveCubes.add(passiveCube)
-
+                nextRoundActiveCubes.add(inactiveCube)
 
         for cube in cubesToDelete:
             nextRoundActiveCubes.remove(cube)
 
-        self.activeCubesCoordinates = nextRoundActiveCubes
+        self._activeCubesCoordinates = nextRoundActiveCubes
+        return self._activeCubesCoordinates
 
-        return self.activeCubesCoordinates
+    def _getActiveNeighborsCount(self, currentCube: Coordinates) -> int:
+        activeNeighborsCount = sum(
+            1 for cube in self._getNeighborCubes(currentCube) if cube in self._activeCubesCoordinates)
+        return activeNeighborsCount - 1 if currentCube in self._activeCubesCoordinates else activeNeighborsCount
 
+    def _getNeighborsOfActiveCubes(self) -> Set[Coordinates]:
+        cubesInTheArea: Set[Coordinates] = set()
 
+        for activeCube in self._activeCubesCoordinates:
+            neighborCubes = self._getNeighborCubes(activeCube)
+            for cube in neighborCubes:
+                cubesInTheArea.add(cube)
 
-    def getActiveNeighborsCount(self, currentActiveCube):
-        activeNeighborsCount = 0
-        # 1 0 0,  0 2 0,  1 2 0
+        cubesInTheArea -= self._activeCubesCoordinates
+        return cubesInTheArea
+
+    def _getNeighborCubes(self, currentCube: Coordinates) -> Set[Coordinates]:
+        nearbyCubes: Set[Coordinates] = set()
         for xOffset in range(-1, 2):
             for yOffset in range(-1, 2):
                 for zOffset in range(-1, 2):
-                    for item in self.activeCubesCoordinates:
-                        if  Coordinates(currentActiveCube.x + xOffset, currentActiveCube.y + yOffset, currentActiveCube.z + zOffset) == item:
-                            #if Coordinates(currentActiveCube.x + xOffset, currentActiveCube.y + yOffset, currentActiveCube.z + zOffset) in self.activeCubesCoordinates:
-                            activeNeighborsCount += 1
-
-
-        return activeNeighborsCount - 1
-
-
-    def getNeighborsOfActiveCubes(self):
-        cubesInTheArea: set = set()
-
-        for activeCube in self.activeCubesCoordinates:
-            for xOffset in range(-1, 2):
-                for yOffset in range(-1, 2):
-                    for zOffset in range(-1, 2):
-                        cubesInTheArea.add(Coordinates(activeCube.x + xOffset, activeCube.y + yOffset, activeCube.z + zOffset))
-
-        cubesInTheArea = cubesInTheArea - self.activeCubesCoordinates
-        return cubesInTheArea
+                    nearbyCubes.add(
+                        Coordinates(currentCube.x + xOffset, currentCube.y + yOffset, currentCube.z + zOffset))
+        return nearbyCubes
 
 
 class CoordinatesPartTwo(Coordinates):
@@ -107,66 +102,86 @@ class CoordinatesPartTwo(Coordinates):
 
         return self.x == other.x and self.y == other.y and self.z == other.z and self.w == other.w
 
+
 class ConwayCubesOperatorPartTwo(ConwayCubesOperator):
-    def getActiveNeighborsCount(self, currentActiveCube):
-        activeNeighborsCount = 0
-        # 1 0 0,  0 2 0,  1 2 0
+    def _getNeighborCubes(self, currentCube: Coordinates) -> Set[CoordinatesPartTwo]:
+        nearbyCubes: Set[CoordinatesPartTwo] = set()
         for xOffset in range(-1, 2):
             for yOffset in range(-1, 2):
                 for zOffset in range(-1, 2):
                     for wOffset in range(-1, 2):
-                        if CoordinatesPartTwo(currentActiveCube.x + xOffset, currentActiveCube.y + yOffset,
-                                           currentActiveCube.z + zOffset, currentActiveCube.w + wOffset) in self.activeCubesCoordinates:
-                                # if Coordinates(currentActiveCube.x + xOffset, currentActiveCube.y + yOffset, currentActiveCube.z + zOffset) in self.activeCubesCoordinates:
-                            activeNeighborsCount += 1
-
-        return activeNeighborsCount - 1
-
-    def getNeighborsOfActiveCubes(self):
-        cubesInTheArea: set = set()
-
-        for activeCube in self.activeCubesCoordinates:
-            for xOffset in range(-1, 2):
-                for yOffset in range(-1, 2):
-                    for zOffset in range(-1, 2):
-                        for wOffset in range(-1, 2):
-                            cubesInTheArea.add(
-                                CoordinatesPartTwo(activeCube.x + xOffset, activeCube.y + yOffset, activeCube.z + zOffset, activeCube.w + wOffset))
-
-        cubesInTheArea = cubesInTheArea - self.activeCubesCoordinates
-        return cubesInTheArea
+                        nearbyCubes.add(CoordinatesPartTwo(currentCube.x + xOffset, currentCube.y + yOffset,
+                                                           currentCube.z + zOffset, currentCube.w + wOffset))
+        return nearbyCubes
 
 
-def getInitialActiveCubes(inputFile: str):
-    activeCubesPartOne: Set[Coordinates] = set()
-    activeCubesPartTwo: Set[CoordinatesPartTwo] = set()
+def createCoordinatesForPartOne(coordinateNumCollection: List[Tuple[int, int]]) -> Set[Coordinates]:
+    activeCubes: Set[Coordinates] = set()
+    for coordinateNum in coordinateNumCollection:
+        activeCubes.add(Coordinates(coordinateNum[0], coordinateNum[1], 0))
+    return activeCubes
+
+
+def createCoordinatesForPartTwo(coordinateNumCollection: RawCoordinateNumsCollection) -> Set[CoordinatesPartTwo]:
+    activeCubes: Set[CoordinatesPartTwo] = set()
+    for coordinateNum in coordinateNumCollection:
+        activeCubes.add(CoordinatesPartTwo(coordinateNum[0], coordinateNum[1], 0, 0))
+    return activeCubes
+
+
+def getInitialActiveCubesCoordinateNums(inputFile: str) -> RawCoordinateNumsCollection:
+    coordinateNumsCollection: RawCoordinateNumsCollection = []
 
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
         for j in range(len(lines)):
             for i in range(len(lines[j].strip("\n"))):
                 if lines[j][i] == CubeStatus.ACTIVE.value:
-                    activeCubesPartOne.add(Coordinates(i, j, 0))
-                    activeCubesPartTwo.add(CoordinatesPartTwo(i, j, 0, 0))
+                    coordinateNumsCollection.append((i, j))
+
+    return coordinateNumsCollection
 
 
-    return activeCubesPartOne, activeCubesPartTwo
+def main():
+    initialActiveCubesCoordinates: RawCoordinateNumsCollection = getInitialActiveCubesCoordinateNums(INPUT_FILE)
+
+    initialActiveCubesPartOne: Set[Coordinates] = createCoordinatesForPartOne(initialActiveCubesCoordinates)
+    cubeOp = ConwayCubesOperator(initialActiveCubesPartOne)
+
+    for i in range(0, BOOT_PROCESS_CYCLE_COUNT):
+        cubeOp.getActiveCubesInNextRound()
+    print(cubeOp.getActiveCubesNum())  # 353
+
+    initialActiveCubesPartTwo: Set[CoordinatesPartTwo] = createCoordinatesForPartTwo(initialActiveCubesCoordinates)
+    cubeOp = ConwayCubesOperatorPartTwo(initialActiveCubesPartTwo)
+
+    for i in range(0, BOOT_PROCESS_CYCLE_COUNT):
+        cubeOp.getActiveCubesInNextRound()
+    print(cubeOp.getActiveCubesNum())  # 2472
 
 
-initialActiveCubes = getInitialActiveCubes(INPUT_FILE)
-# cubeOp = ConwayCubesOperator(initialActiveCubes[0])
-#
-# for i in range(0, 6):
-#     print(len(cubeOp.getActiveCubesInNextRound()))
+class ActiveCubesOperationTester(unittest.TestCase):
+    def test_getActiveCubesInNextRound_threeDimensionCoordinates_correctActiveCubesNumReturned(self):
+        initialActiveCubesCoordinates = getInitialActiveCubesCoordinateNums(TEST_INPUT_FILE)
+        initialActiveCubesPartOne = createCoordinatesForPartOne(initialActiveCubesCoordinates)
+        cubeOp = ConwayCubesOperator(initialActiveCubesPartOne)
+
+        for i in range(0, BOOT_PROCESS_CYCLE_COUNT):
+            cubeOp.getActiveCubesInNextRound()
+
+        self.assertEqual(112, cubeOp.getActiveCubesNum())
+
+    def test_getActiveCubesInNextRound_fourDimensionCoordinates_correctActiveCubesNumReturned(self):
+        initialActiveCubesCoordinates = getInitialActiveCubesCoordinateNums(TEST_INPUT_FILE)
+        initialActiveCubesPartOne = createCoordinatesForPartTwo(initialActiveCubesCoordinates)
+        cubeOp = ConwayCubesOperatorPartTwo(initialActiveCubesPartOne)
+
+        for i in range(0, BOOT_PROCESS_CYCLE_COUNT):
+            cubeOp.getActiveCubesInNextRound()
+
+        self.assertEqual(848, cubeOp.getActiveCubesNum())
 
 
-cubeOp = ConwayCubesOperatorPartTwo(initialActiveCubes[1])
-for i in range(0, 6):
-    print(len(cubeOp.getActiveCubesInNextRound()))
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    # main()
+    unittest.main()
