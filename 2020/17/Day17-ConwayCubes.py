@@ -2,6 +2,7 @@ from typing import List, Dict, Set
 from copy import deepcopy
 from enum import Enum
 
+INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 
 
@@ -44,10 +45,10 @@ class ConwayCubesOperator:
                 cubesToDelete.append((activeCube))
 
         neigh = self.getNeighborsOfActiveCubes()
-        for coord in neigh:
-            print(coord.x, coord.y, coord.z)
-            print("------------------------")
-        print(len(self.activeCubesCoordinates))
+        # for coord in neigh:
+        #     print(coord.x, coord.y, coord.z)
+        #     print("------------------------")
+        # print(len(self.activeCubesCoordinates))
 
 
         # missing: 0 1 0
@@ -112,6 +113,8 @@ def getInitialActiveCubes(inputFile: str):
     return activeCubes
 
 
-initialActiveCubes = getInitialActiveCubes(TEST_INPUT_FILE)
+initialActiveCubes = getInitialActiveCubes(INPUT_FILE)
 cubeOp = ConwayCubesOperator(initialActiveCubes)
-print(len(cubeOp.getActiveCubesInNextRound()))
+
+for i in range(0, 6):
+    print(len(cubeOp.getActiveCubesInNextRound()))
