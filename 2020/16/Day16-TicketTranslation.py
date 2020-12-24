@@ -17,6 +17,7 @@ class TrainTicketPositionExtractor:
         self.trainProperties = trainProperties
         self.ownTicket = ownTicket
         self.nearbyTickets = nearbyTickets
+        self.ticketLength = len(self.ownTicket)
 
     def getSumOfNearbyInvalidTicketValues(self):
         sumOfNearbyInvalidTicketValues = 0
@@ -52,7 +53,7 @@ class TrainTicketPositionExtractor:
     def getPositionToPossibleTrainProperties(self) -> Dict[int, List[str]]:
         positionToPossibleProperties: Dict[int, List[str]] = {}
 
-        for position in range(0, len(self.nearbyTickets[0])):
+        for position in range(0, self.ticketLength):
             positionToPossibleProperties[position] = self.getPossibleTrainPropertiesAtPosition(position)
         return positionToPossibleProperties
 
@@ -108,7 +109,7 @@ def createTextSectionsFromInput(inputFile: str) -> List[List[str]]:
     return textSections
 
 
-def parseInput(textSections: List[List[str]]) -> Tuple[
+def parseTextSections(textSections: List[List[str]]) -> Tuple[
     TrainPropertiesToValuesType, TicketType, NearbyTicketsType]:
     allTrainPropertiesToValues = []
     for trainProperty in textSections[0]:
@@ -144,7 +145,7 @@ def createTicketValuesFromDataRangeString(dataRange: str) -> List[int]:
 
 def main():
     rawInput = createTextSectionsFromInput(INPUT_FILE)
-    train, myTicket, nearbyTickets = parseInput(rawInput)
+    train, myTicket, nearbyTickets = parseTextSections(rawInput)
     trainTicketPositionExtractor = TrainTicketPositionExtractor(train, myTicket, nearbyTickets)
 
     invalidTicketValuesSum = trainTicketPositionExtractor.getSumOfNearbyInvalidTicketValues()
@@ -159,14 +160,14 @@ def main():
 class TrainPropertyLocatorTester(unittest.TestCase):
     def test_getSumOfNearbyInvalidTicketValues_correctSumReturned(self):
         rawInput = createTextSectionsFromInput(TEST_INPUT_FIRST_PART)
-        train, myTicket, nearbyTickets = parseInput(rawInput)
+        train, myTicket, nearbyTickets = parseTextSections(rawInput)
         trainTicketPositionExtractor = TrainTicketPositionExtractor(train, myTicket, nearbyTickets)
         invalidTicketValuesSum = trainTicketPositionExtractor.getSumOfNearbyInvalidTicketValues()
         self.assertEqual(71, invalidTicketValuesSum)
 
     def test_getProductOfDeparturePropertiesInMyTicket_correctProductReturned(self):
         rawInput = createTextSectionsFromInput(TEST_INPUT_SECOND_PART)
-        train, myTicket, nearbyTickets = parseInput(rawInput)
+        train, myTicket, nearbyTickets = parseTextSections(rawInput)
         trainTicketPositionExtractor = TrainTicketPositionExtractor(train, myTicket, nearbyTickets)
         trainPropertiesPositionsOnTicket = trainTicketPositionExtractor.findTrainPropertiesOnTickets()
         departurePropertiesProductOnMyTicket = trainTicketPositionExtractor.getProductOfDeparturePropertiesInMyTicket(
