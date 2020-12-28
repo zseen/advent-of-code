@@ -26,10 +26,8 @@ class MaskingHandler:
 
     def getMaskedMemoryItems(self, memoryItem: MemoryItem) -> List[MemoryItem]:
         if self._maskingType == MaskingType.MEMORY_ADDRESS:
-            maskedMemoryAddressesFromMemoryAddress = self._getAllMaskedMemoryAddresses(
-                memoryItem.memoryAddress)
-            return [MemoryItem(maskedMemoryAddress, memoryItem.value) for maskedMemoryAddress
-                    in maskedMemoryAddressesFromMemoryAddress]
+            maskedMemoryAddresses = self._getAllMaskedMemoryAddresses(memoryItem.memoryAddress)
+            return [MemoryItem(maskedMemoryAddress, memoryItem.value) for maskedMemoryAddress in maskedMemoryAddresses]
         else:
             maskedValue: int = self._createMaskedValue(memoryItem.value)
             return [MemoryItem(memoryItem.memoryAddress, maskedValue)]
@@ -52,11 +50,10 @@ class MaskingHandler:
 
     def _getAllMaskedMemoryAddresses(self, memoryAddress: int) -> List[int]:
         maskedBinaryMemoryAddress: str = self._createMaskedMemoryAddress(memoryAddress)
-        smallestPossibleNumFromMaskedMemoryAddress = self._getSmallestPossibleNumFromMaskedMemoryAddress(
+        smallestPossibleNum = self._getSmallestPossibleNumFromMaskedMemoryAddress(
             maskedBinaryMemoryAddress)
         numsToCombineAndAddToSmallestMaskedMemoryAddress = [2 ** xPosition for xPosition in self._getXPositionsInMask()]
-        return self._generateMaskedMemoryAddresses(smallestPossibleNumFromMaskedMemoryAddress,
-                                                   numsToCombineAndAddToSmallestMaskedMemoryAddress)
+        return self._generateMaskedMemoryAddresses(smallestPossibleNum, numsToCombineAndAddToSmallestMaskedMemoryAddress)
 
     def _createMaskedMemoryAddress(self, memoryAddress: int) -> str:
         memoryAddressInBinary: str = ("{0:b}".format(memoryAddress))
@@ -72,68 +69,51 @@ class MaskingHandler:
         return int(maskedBinaryMemoryAddress.replace('X', '0'), 2)
 
     def _getXPositionsInMask(self) -> List[int]:
-        # return [i for i in range(MASK_LENGTH - 1, -1, -1) if self._mask[i] == "X"]
         return [(MASK_LENGTH - 1 - i) for i in range(0, MASK_LENGTH) if self._mask[i] == "X"]
 
-    def _generateMaskedMemoryAddresses(self, smallestPossibleNumFromMaskedMemoryAddress: int,
-                                       numsToCombineAndAddToSmallestPossibleNum: List[int]) -> List[int]:
+    def _generateMaskedMemoryAddresses(self, smallestPossibleNumFromMaskedMemoryAddress: int, numsToCombineAndAddToSmallestPossibleNum: List[int]) -> \
+    List[int]:
         maskedMemoryAddresses = []
-        self._generateMaskedMemoryAddressesRecursive(smallestPossibleNumFromMaskedMemoryAddress,
-                                                     numsToCombineAndAddToSmallestPossibleNum,
+        self._generateMaskedMemoryAddressesRecursive(smallestPossibleNumFromMaskedMemoryAddress, numsToCombineAndAddToSmallestPossibleNum,
                                                      maskedMemoryAddresses)
         return maskedMemoryAddresses
 
-    def _generateMaskedMemoryAddressesRecursive(self, sumSoFar: int, availableNums: List[int],
-                                                maskedMemoryAddresses: List[int]) -> None:
+    def _generateMaskedMemoryAddressesRecursive(self, sumSoFar: int, availableNums: List[int], maskedMemoryAddresses: List[int]) -> None:
         if len(availableNums) == 0:
             maskedMemoryAddresses.append(int(sumSoFar))
             return
 
-        self._generateMaskedMemoryAddressesRecursive(sumSoFar + availableNums[0], availableNums[1:],
-                                                     maskedMemoryAddresses)
+        self._generateMaskedMemoryAddressesRecursive(sumSoFar + availableNums[0], availableNums[1:], maskedMemoryAddresses)
         self._generateMaskedMemoryAddressesRecursive(sumSoFar, availableNums[1:], maskedMemoryAddresses)
 
 
-class MaskingHandlersCollectionOperator:
+class MaskingInstructionExecuter:
     def __init__(self, allMemoryItems: Dict[str, List[MemoryItem]], maskingType: MaskingType):
         self._allMemoryItems = allMemoryItems
         self._maskingType = maskingType
-        self._allMaskedMemoryItems: Dict[int, int] = self.getAllMaskedItems()
+        self._memory: Dict[int, int] = {}
 
     def sumValuesInMemoryAddresses(self) -> int:
         maskedValuesSum = 0
-        for memoryAddress, value in self._allMaskedMemoryItems.items():
+        for memoryAddress, value in self._memory.items():
             maskedValuesSum += value
 
         return maskedValuesSum
 
-    def getAllMaskedItems(self) -> Dict[int, int]:
-        allMaskedMemoryItems: Dict[int, int] = dict()
+    def populateMemory(self) -> None:
         for mask, memoryItems in self._allMemoryItems.items():
             maskingHandler = MaskingHandler(mask, self._maskingType)
-            memoryAddressesToValues = self.getMemoryAddressesToValuesAfterMasking(
+            self._getMemoryAddressesToValuesAfterMasking(
                 memoryItems, maskingHandler)
-            allMaskedMemoryItems.update(memoryAddressesToValues)
 
-        return allMaskedMemoryItems
-
-    def getMemoryAddressesToValuesAfterMasking(self, memoryItems: List[MemoryItem], maskingHandler: MaskingHandler) -> \
-    Dict[int, int]:
-        memoryAddressesToValuesAfterMasking: Dict[int, int] = dict()
+    def _getMemoryAddressesToValuesAfterMasking(self, memoryItems: List[MemoryItem], maskingHandler: MaskingHandler) -> None:
         for memoryItem in memoryItems:
             maskedMemoryItems = maskingHandler.getMaskedMemoryItems(memoryItem)
-            memoryAddressesToValuesAfterMasking.update(
-                self.getMemoryAddressToValueAfterMasking(maskedMemoryItems))
+            for maskedMemoryItem in maskedMemoryItems:
+                self._writeItemsToMemory(maskedMemoryItem)
 
-        return memoryAddressesToValuesAfterMasking
-
-    @staticmethod
-    def getMemoryAddressToValueAfterMasking(maskedMemoryItems: List[MemoryItem]) -> Dict[int, int]:
-        memoryAddressToValue: Dict[int, int] = dict()
-        for maskedMemoryItem in maskedMemoryItems:
-            memoryAddressToValue[
-                maskedMemoryItem.memoryAddress] = maskedMemoryItem.value
-        return memoryAddressToValue
+    def _writeItemsToMemory(self, maskedMemoryItem: MemoryItem) -> None:
+        self._memory[maskedMemoryItem.memoryAddress] = maskedMemoryItem.value
 
 
 def getAllMasksToMemoryItems(inputFile: str):
@@ -161,27 +141,30 @@ def getAllMasksToMemoryItems(inputFile: str):
 def main():
     allMasksToMemoryItems: Dict[str, List[MemoryItem]] = getAllMasksToMemoryItems(INPUT_FILE)
 
-    maskingOperatorWithoutMaskingMemoryAddress = MaskingHandlersCollectionOperator(allMasksToMemoryItems,
-                                                                                   MaskingType.VALUE)
+    maskingOperatorWithoutMaskingMemoryAddress = MaskingInstructionExecuter(allMasksToMemoryItems, MaskingType.VALUE)
+
+    maskingOperatorWithoutMaskingMemoryAddress.populateMemory()
     print(maskingOperatorWithoutMaskingMemoryAddress.sumValuesInMemoryAddresses())  # 7997531787333
 
-    maskingOperatorWithMaskingMemoryAddresses = MaskingHandlersCollectionOperator(allMasksToMemoryItems,
-                                                                                  MaskingType.MEMORY_ADDRESS)
+    maskingOperatorWithMaskingMemoryAddresses = MaskingInstructionExecuter(allMasksToMemoryItems, MaskingType.MEMORY_ADDRESS)
+
+    maskingOperatorWithoutMaskingMemoryAddress.populateMemory()
     print(maskingOperatorWithMaskingMemoryAddresses.sumValuesInMemoryAddresses())  # 3564822193820
 
 
 class MaskingOperationsTester(unittest.TestCase):
     def test_sumValuesInMemoryAddresses_memoryAddressesNotMasked_correctSumReturned(self):
         allMasksToMemoryItems: Dict[str, List[MemoryItem]] = getAllMasksToMemoryItems(TEST_INPUT)
-        maskingOperatorWithoutMaskingMemoryAddress = MaskingHandlersCollectionOperator(allMasksToMemoryItems,
-                                                                                       MaskingType.VALUE)
+        maskingOperatorWithoutMaskingMemoryAddress = MaskingInstructionExecuter(allMasksToMemoryItems, MaskingType.VALUE)
+
+        maskingOperatorWithoutMaskingMemoryAddress.populateMemory()
         self.assertEqual(165, maskingOperatorWithoutMaskingMemoryAddress.sumValuesInMemoryAddresses())
 
     def test_sumValuesInMemoryAddresses_valuesNotMasked_correctSumReturned(self):
-        allMasksToMemoryItems: Dict[str, List[MemoryItem]] = getAllMasksToMemoryItems(
-            TEST_INPUT_PART_TWO)
-        maskingOperatorWithMaskingMemoryAddress = MaskingHandlersCollectionOperator(allMasksToMemoryItems,
-                                                                                    MaskingType.MEMORY_ADDRESS)
+        allMasksToMemoryItems: Dict[str, List[MemoryItem]] = getAllMasksToMemoryItems(TEST_INPUT_PART_TWO)
+        maskingOperatorWithMaskingMemoryAddress = MaskingInstructionExecuter(allMasksToMemoryItems, MaskingType.MEMORY_ADDRESS)
+
+        maskingOperatorWithMaskingMemoryAddress.populateMemory()
         self.assertEqual(208, maskingOperatorWithMaskingMemoryAddress.sumValuesInMemoryAddresses())
 
 
