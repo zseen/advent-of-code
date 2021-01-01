@@ -15,7 +15,7 @@ class CubeStatus(Enum):
 
 
 class FourDimensionalCoordinates:
-    def __init__(self, x, y, z, w):
+    def __init__(self, x, y, z=0, w=0):
         self.x = x
         self.y = y
         self.z = z
@@ -38,20 +38,20 @@ class ConwayCubesHandler:
     def __init__(self, activeCubesCoordinates: Set[FourDimensionalCoordinates]):
         self._activeCubesCoordinates = activeCubesCoordinates
 
-    def executeBootingCycles(self, bootProcessCycleNum: int) -> None:
-        for _ in range(0, bootProcessCycleNum):
-            self._getActiveCubesInNextRound()
+    def executeBootingCycles(self, numCycles: int) -> None:
+        for _ in range(0, numCycles):
+            self._executeIteration()
 
     def getActiveCubesNum(self) -> int:
         return len(self._activeCubesCoordinates)
 
-    def _getActiveCubesInNextRound(self) -> None:
-        nextRoundActiveCubesCandidates: Set[FourDimensionalCoordinates] = deepcopy(self._activeCubesCoordinates)
-        stillActiveCubesInNextRound = self._deleteNoLongerActiveCubes(nextRoundActiveCubesCandidates)
-        nextRoundActiveCubes = self._addNewlyActivatedCubes(stillActiveCubesInNextRound)
+    def _executeIteration(self) -> None:
+        nextRoundActiveCubes: Set[FourDimensionalCoordinates] = deepcopy(self._activeCubesCoordinates)
+        self._deleteNoLongerActiveCubes(nextRoundActiveCubes)
+        self._addNewlyActivatedCubes(nextRoundActiveCubes)
         self._activeCubesCoordinates = nextRoundActiveCubes
 
-    def _deleteNoLongerActiveCubes(self, nextRoundActiveCubes: Set[FourDimensionalCoordinates]) -> Set[FourDimensionalCoordinates]:
+    def _deleteNoLongerActiveCubes(self, nextRoundActiveCubes: Set[FourDimensionalCoordinates]) -> None:
         cubesToDelete: List[Coordinates] = []
         for activeCube in self._activeCubesCoordinates:
             activeNeighborsCount = self._getActiveNeighborsCount(activeCube)
@@ -61,14 +61,11 @@ class ConwayCubesHandler:
         for cube in cubesToDelete:
             nextRoundActiveCubes.remove(cube)
 
-        return nextRoundActiveCubes
-
-    def _addNewlyActivatedCubes(self, nextRoundActiveCubes: Set[FourDimensionalCoordinates]) -> Set[FourDimensionalCoordinates]:
+    def _addNewlyActivatedCubes(self, nextRoundActiveCubes: Set[FourDimensionalCoordinates]) -> None:
         for inactiveCube in self._getNeighborsOfActiveCubes():
             activeNeighborsCount = self._getActiveNeighborsCount(inactiveCube)
             if activeNeighborsCount == 3:
                 nextRoundActiveCubes.add(inactiveCube)
-        return nextRoundActiveCubes
 
     def _getActiveNeighborsCount(self, currentCube: FourDimensionalCoordinates) -> int:
         activeNeighborsCount = sum(
@@ -80,8 +77,7 @@ class ConwayCubesHandler:
 
         for activeCube in self._activeCubesCoordinates:
             neighborCubes = self._getNeighborCubes(activeCube)
-            for cube in neighborCubes:
-                cubesInTheArea.add(cube)
+            cubesInTheArea.update(neighborCubes)
 
         cubesInTheArea -= self._activeCubesCoordinates
         return cubesInTheArea
@@ -92,7 +88,7 @@ class ConwayCubesHandler:
             for yOffset in range(-1, 2):
                 for zOffset in range(-1, 2):
                     nearbyCubes.add(
-                        FourDimensionalCoordinates(currentCube.x + xOffset, currentCube.y + yOffset, currentCube.z + zOffset, currentCube.w))
+                        FourDimensionalCoordinates(currentCube.x + xOffset, currentCube.y + yOffset, currentCube.z + zOffset))
         return nearbyCubes
 
 
@@ -116,7 +112,7 @@ def getInitialActiveCubesCoordinateNums(inputFile: str) -> Set[FourDimensionalCo
         for j in range(len(lines)):
             for i in range(len(lines[j].strip("\n"))):
                 if lines[j][i] == CubeStatus.ACTIVE.value:
-                    fourDimensionalCoordinatesCollection.add(FourDimensionalCoordinates(i, j, 0, 0))
+                    fourDimensionalCoordinatesCollection.add(FourDimensionalCoordinates(i, j))
 
     return fourDimensionalCoordinatesCollection
 
@@ -124,29 +120,29 @@ def getInitialActiveCubesCoordinateNums(inputFile: str) -> Set[FourDimensionalCo
 def main():
     initialActiveCubes: RawCoordinateNumsCollection = getInitialActiveCubesCoordinateNums(INPUT_FILE)
 
-    cubeOp = ConwayCubesHandler(initialActiveCubes)
-    cubeOp.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
-    print(cubeOp.getActiveCubesNum())  # 353
+    cubeHandler = ConwayCubesHandler(initialActiveCubes)
+    cubeHandler.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
+    print(cubeHandler.getActiveCubesNum())  # 353
 
-    cubeOp = ConwayCubesHandlerPartTwo(initialActiveCubes)
-    cubeOp.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
-    print(cubeOp.getActiveCubesNum())  # 2472
+    cubeHandler = ConwayCubesHandlerPartTwo(initialActiveCubes)
+    cubeHandler.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
+    print(cubeHandler.getActiveCubesNum())  # 2472
 
 
 class ActiveCubesOperationTester(unittest.TestCase):
     def test_getActiveCubesInNextRound_threeDimensionCoordinates_correctActiveCubesNumReturned(self):
         initialActiveCubesCoordinates = getInitialActiveCubesCoordinateNums(TEST_INPUT_FILE)
-        cubeOp = ConwayCubesHandler(initialActiveCubesCoordinates)
-        cubeOp.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
+        cubeHandler = ConwayCubesHandler(initialActiveCubesCoordinates)
+        cubeHandler.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
 
-        self.assertEqual(112, cubeOp.getActiveCubesNum())
+        self.assertEqual(112, cubeHandler.getActiveCubesNum())
 
     def test_getActiveCubesInNextRound_fourDimensionCoordinates_correctActiveCubesNumReturned(self):
         initialActiveCubesCoordinates = getInitialActiveCubesCoordinateNums(TEST_INPUT_FILE)
-        cubeOp = ConwayCubesHandlerPartTwo(initialActiveCubesCoordinates)
-        cubeOp.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
+        cubeHandler = ConwayCubesHandlerPartTwo(initialActiveCubesCoordinates)
+        cubeHandler.executeBootingCycles(BOOT_PROCESS_CYCLE_COUNT)
 
-        self.assertEqual(848, cubeOp.getActiveCubesNum())
+        self.assertEqual(848, cubeHandler.getActiveCubesNum())
 
 
 if __name__ == '__main__':
