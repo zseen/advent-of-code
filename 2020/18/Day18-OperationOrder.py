@@ -13,62 +13,45 @@ class Calculator:
         self.expression = list(expression.replace(" ", ""))
 
     def calculate(self):
-
         i = 0
-        while "(" in self.expression or ")" in self.expression and i < len(self.expression):
+        while "(" in set(self.expression):
             if self.expression[i] == "(":
-                self.findInnermostParentheses(i)
+                self.extractParentheses(i)
                 i = 0
             else:
                 i += 1
 
-        print(self.expression)
+        return self.calculateSumOrProduct(self.expression)
 
-        currentResult = self.calculateSumOrProduct(self.expression)
-
-        return currentResult
-
-
-
-
-    def findInnermostParentheses(self, currentExpressionIndex):
+    def extractParentheses(self, offset):
         lastOpeningParenthesesIndex = None
-        expressionChunk = self.expression[currentExpressionIndex:]
+        expressionChunk = self.expression[offset:]
         for j in range(0, len(expressionChunk)):
             if expressionChunk[j] == "(":
                 lastOpeningParenthesesIndex = j
             elif expressionChunk[j] == ")":
                 subResult = self.calculateSumOrProduct(expressionChunk[lastOpeningParenthesesIndex + 1: j])
-                self.expression[currentExpressionIndex + lastOpeningParenthesesIndex] = str(subResult)
-                del self.expression[currentExpressionIndex + lastOpeningParenthesesIndex+1: currentExpressionIndex+ j+1]
+                self.expression[offset + lastOpeningParenthesesIndex] = str(subResult)
+                del self.expression[offset + lastOpeningParenthesesIndex + 1: offset + j + 1]
                 break
 
 
 
     def calculateSumOrProduct(self, expressionChunk):
+        if not expressionChunk or not expressionChunk[0].isnumeric():
+            raise ValueError("Invalid expression chunk received.")
+
         currentResult = int(expressionChunk[0])
         i = 1
         while i < len(expressionChunk) - 1:
             if expressionChunk[i] == "+":
-                numToAdd = ""
-                j = i + 1
-                while j < len(expressionChunk) and expressionChunk[j].isdigit():
-                    numToAdd += expressionChunk[j]
-                    j += 1
-                currentResult += int(numToAdd)
-                i = j
+                currentResult += int(expressionChunk[i+1])
             elif expressionChunk[i] == "*":
-                numToAdd = ""
-                j = i + 1
-                while j < len(expressionChunk) and expressionChunk[j].isdigit():
-                    numToAdd += expressionChunk[j]
-                    j += 1
+                currentResult *= int(expressionChunk[i+1])
+            i += 2
 
-                currentResult *= int(numToAdd)
-                i = j
-            #i += 1
-        #print(currentResult)
         return currentResult
+
 
 
 def getInput(inputFile: str):
