@@ -37,9 +37,24 @@ class Calculator:
 
 
 
+
+
+
+
     def calculateSumOrProduct(self, expressionChunk):
         if not expressionChunk or not expressionChunk[0].isnumeric():
             raise ValueError("Invalid expression chunk received.")
+
+        i = 1
+        while "+" in expressionChunk:
+            if expressionChunk[i] == "+":
+                subResult = int(expressionChunk[i - 1]) + int(expressionChunk[i + 1])
+                expressionChunk[i - 1] = str(subResult)
+                del expressionChunk[i : i + 2]
+                i = 1
+            else:
+                i += 1
+
 
         currentResult = int(expressionChunk[0])
         i = 1
@@ -75,4 +90,7 @@ print(sums)
 
 
 
-
+# examples = [FIRST_EXAMPLE, SECOND_EXAMPLE, THIRD_EXAMPLE, FOURTH_EXAMPLE]
+# for item in examples:
+#     c = Calculator(item)
+#     print(c.calculate())
