@@ -1,101 +1,102 @@
 import unittest
-from typing import List
+from typing import List, Tuple
 from enum import Enum
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 
+ADDITION = "+"
+MULTIPLICATION = "*"
+OPENING_PARENTHESIS = "("
+CLOSING_PARENTHESIS = ")"
 
-class Operation(Enum):
-    ADDITION = "+"
-    MULTIPLICATION = "*"
-    OPENING_PARENTHESIS = "("
-    CLOSING_PARENTHESIS = ")"
-
+class OperationOrder(Enum):
+    NO_PREFERENCE = "no preference",
+    ADDITION_PREFERENCE = "addition preference"
 
 class Calculator:
-    def __init__(self, expression: str, operationOrderMatters: bool):
+    def __init__(self, expression: str, operationOrder: Enum):
         self._expression: List[str] = list(expression.replace(" ", ""))
-        self._operationOrderMatters = operationOrderMatters
+        self._operationOrder = operationOrder
 
     def evaluate(self) -> int:
-        i = 0
-        while Operation.OPENING_PARENTHESIS.value in self._expression and i < len(self._expression):
-            if self._expression[i] == Operation.OPENING_PARENTHESIS.value:
-                self._extractInnermostParenthesesStartingFromIndex(i)
-                i = 0
-            else:
-                i += 1
+        while OPENING_PARENTHESIS in self._expression:
+            index = self._expression.index(OPENING_PARENTHESIS)
+            self._extractInnermostParenthesis(index)
 
-        return self._calculateOperations()
+        return self.evaluateWithoutParentheses()
 
-    def _extractInnermostParenthesesStartingFromIndex(self, startingIndex: int) -> None:
+    def _extractInnermostParenthesis(self, startingIndex: int):
+        lastOpeningParenthesisIndex, closingParenthesisIndex = self._findInnermostOpeningParenthesisIndex(startingIndex)
+        evaluatedSubExpression = str(self.evaluateWithoutParentheses(lastOpeningParenthesisIndex + 1,
+                                                                 closingParenthesisIndex))
+        self._substitutePartInExpression(evaluatedSubExpression, lastOpeningParenthesisIndex, closingParenthesisIndex)
+
+    def _findInnermostOpeningParenthesisIndex(self, startingIndex: int) -> Tuple[int, int]:
         if startingIndex > len(self._expression):
-            raise ValueError("Double check index and expression length when attempting to extract parentheses.")
+            raise ValueError("Starting index larger than expression length.")
 
         lastOpeningParenthesesIndex: int = 0
-        expressionChunk: List[str] = self._expression[startingIndex:]
-        for i in range(0, len(expressionChunk)):
-            if expressionChunk[i] == Operation.OPENING_PARENTHESIS.value:
+        for i in range(startingIndex, len(self._expression)):
+            if self._expression[i] == OPENING_PARENTHESIS:
                 lastOpeningParenthesesIndex = i
-            elif expressionChunk[i] == Operation.CLOSING_PARENTHESIS.value:
-                extract = self._calculateOperations(expressionChunk[lastOpeningParenthesesIndex + 1: i])
-                self._modifyExpressionWithExtract(extract, startingIndex + lastOpeningParenthesesIndex, startingIndex + i)
-                break
+            elif self._expression[i] == CLOSING_PARENTHESIS:
+                return (lastOpeningParenthesesIndex, i)
 
-    def _modifyExpressionWithExtract(self, extract, startingPosition, endingPosition) -> None:
+
+    def _substitutePartInExpression(self, evaluatedSubExpression: str, startingPosition: int, endingPosition: int) -> None:
         if startingPosition >= len(self._expression) or endingPosition >= len(self._expression):
-            raise ValueError("Double check indexes and expression when modifying the expression.")
+            raise ValueError("Starting or ending index larger than expression length.")
 
-        self._expression[startingPosition] = str(extract)
+        self._expression[startingPosition] = str(evaluatedSubExpression)
         del self._expression[startingPosition + 1: endingPosition + 1]
 
-    def _calculateOperations(self, expressionChunk=None):
-        if not expressionChunk:
-            expressionChunk = self._expression
+    def evaluateWithoutParentheses(self, startingIndex=None, endingIndex=None) -> int:
+        if startingIndex is None or endingIndex is None:
+            startingIndex = 0
+            endingIndex = len(self._expression)
 
-        if self._operationOrderMatters:
-            return Calculator._calculateOperationsWithPrecedence(expressionChunk)
 
-        return Calculator._calculateOperationsWithoutPrecedence(expressionChunk)
+        if self._operationOrder == OperationOrder.ADDITION_PREFERENCE:
+            return Calculator._calculateOperationsWithPrecedence(self._expression[startingIndex: endingIndex])
 
-    @staticmethod
-    def _calculateOperationsWithPrecedence(expressionChunk):
-        Calculator._extractAddition(expressionChunk)
-        return Calculator._carryOutMultiplication(expressionChunk)
+        return Calculator._calculateOperationsWithoutPrecedence(self._expression[startingIndex: endingIndex])
 
     @staticmethod
-    def _extractAddition(expressionChunk: List[str]) -> None:
-        i = 1
-        while Operation.ADDITION.value in expressionChunk:
-            if expressionChunk[i] == Operation.ADDITION.value:
-                extract = int(expressionChunk[i - 1]) + int(expressionChunk[i + 1])
-                expressionChunk[i - 1] = str(extract)
-                del expressionChunk[i: i + 2]
-                i = 0
-            i += 1
+    def _calculateOperationsWithPrecedence(expression) -> int:
+        Calculator._evaluateAllAdditions(expression)
+        return Calculator._evaluateAllMultiplications(expression)
 
     @staticmethod
-    def _carryOutMultiplication(expressionChunk):
+    def _evaluateAllAdditions(expression: List[str]) -> None:
+        while ADDITION in expression:
+            additionIndex = expression.index(ADDITION)
+            evaluatedSubExpression = int(expression[additionIndex - 1]) + int(expression[additionIndex + 1])
+            expression[additionIndex - 1] = str(evaluatedSubExpression)
+            del expression[additionIndex: additionIndex + 2]
+
+
+    @staticmethod
+    def _evaluateAllMultiplications(expression) -> int:
         currentResult = 1
-        for i in range(0, len(expressionChunk), 2):
-            currentResult *= int(expressionChunk[i])
+        for i in range(0, len(expression), 2):
+            currentResult *= int(expression[i])
         return currentResult
 
     @staticmethod
-    def _calculateOperationsWithoutPrecedence(expressionChunk):
-        result = int(expressionChunk[0])
-        for i in range(1, len(expressionChunk) - 1, 2):
-            if expressionChunk[i] == Operation.ADDITION.value:
-                result += int(expressionChunk[i + 1])
-            elif expressionChunk[i] == Operation.MULTIPLICATION.value:
-                result *= int(expressionChunk[i + 1])
+    def _calculateOperationsWithoutPrecedence(expression) -> int:
+        result = int(expression[0])
+        for i in range(1, len(expression) - 1, 2):
+            if expression[i] == ADDITION:
+                result += int(expression[i + 1])
+            elif expression[i] == MULTIPLICATION:
+                result *= int(expression[i + 1])
         return result
 
 
-def getExpressions(inputFile: str):
-    expressions = []
-    with open(inputFile, "r") as inputFile:
+def getExpressions(inputFileName: str) -> List[str]:
+    expressions: List[str] = []
+    with open(inputFileName, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
             expressions.append(line.strip("\n"))
@@ -123,7 +124,7 @@ class CalculatorTester(unittest.TestCase):
         allExpressions = getExpressions(TEST_INPUT_FILE)
         allExpressionsSum = 0
         for expression in allExpressions:
-            calculator = Calculator(expression, operationOrderMatters=False)
+            calculator = Calculator(expression, OperationOrder.NO_PREFERENCE)
             allExpressionsSum += calculator.evaluate()
 
         self.assertEqual(26457, allExpressionsSum)
@@ -132,7 +133,7 @@ class CalculatorTester(unittest.TestCase):
         allExpressions = getExpressions(TEST_INPUT_FILE)
         allExpressionsSum = 0
         for expression in allExpressions:
-            calculator = Calculator(expression, operationOrderMatters=True)
+            calculator = Calculator(expression, OperationOrder.ADDITION_PREFERENCE)
             allExpressionsSum += calculator.evaluate()
 
         self.assertEqual(694173, allExpressionsSum)
