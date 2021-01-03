@@ -65,23 +65,24 @@ class Calculator:
     @staticmethod
     def _calculateOperationsWithPrecedence(expression) -> int:
         Calculator._evaluateAllAdditions(expression)
-        return Calculator._evaluateAllMultiplications(expression)
+        Calculator._evaluateAllMultiplications(expression)
+
+        if not expression or not expression[0].isnumeric():
+            raise ValueError("Error after evaluating additions and multiplications.")
+
+        return int(expression[0])
 
     @staticmethod
     def _evaluateAllAdditions(expression: List[str]) -> None:
         while ADDITION in expression:
-            additionIndex = expression.index(ADDITION)
-            evaluatedSubExpression = int(expression[additionIndex - 1]) + int(expression[additionIndex + 1])
-            expression[additionIndex - 1] = str(evaluatedSubExpression)
-            del expression[additionIndex: additionIndex + 2]
+            Calculator._evaluateSingleAddition(expression)
 
 
     @staticmethod
-    def _evaluateAllMultiplications(expression) -> int:
-        currentResult = 1
-        for i in range(0, len(expression), 2):
-            currentResult *= int(expression[i])
-        return currentResult
+    def _evaluateAllMultiplications(expression) -> None:
+        while MULTIPLICATION in expression:
+            Calculator._evaluateSingleMultiplication(expression)
+
 
     @staticmethod
     def _calculateOperationsWithoutPrecedence(expression) -> int:
@@ -93,6 +94,21 @@ class Calculator:
                 result *= int(expression[i + 1])
         return result
 
+    @staticmethod
+    def _evaluateSingleAddition(expression):
+        additionIndex = expression.index(ADDITION)
+        evaluatedSubExpression = int(expression[additionIndex - 1]) + int(expression[additionIndex + 1])
+        expression[additionIndex - 1] = str(evaluatedSubExpression)
+        del expression[additionIndex: additionIndex + 2]
+
+    @staticmethod
+    def _evaluateSingleMultiplication(expression):
+        multiplicationIndex = expression.index(MULTIPLICATION)
+        evaluatedSubExpression = int(expression[multiplicationIndex - 1]) * int(expression[multiplicationIndex + 1])
+        expression[multiplicationIndex - 1] = str(evaluatedSubExpression)
+        del expression[multiplicationIndex: multiplicationIndex + 2]
+
+
 
 def getExpressions(inputFileName: str) -> List[str]:
     expressions: List[str] = []
@@ -103,6 +119,9 @@ def getExpressions(inputFileName: str) -> List[str]:
     return expressions
 
 
+
+
+
 def main():
     allExpressions = getExpressions(INPUT_FILE)
 
@@ -110,8 +129,8 @@ def main():
     allExpressionsSumWithPrecedence = 0
 
     for expression in allExpressions:
-        calculatorWithoutPrecedence = Calculator(expression, operationOrderMatters=False)
-        calculatorWithPrecedence = Calculator(expression, operationOrderMatters=True)
+        calculatorWithoutPrecedence = Calculator(expression, OperationOrder.NO_PREFERENCE)
+        calculatorWithPrecedence = Calculator(expression, OperationOrder.ADDITION_PREFERENCE)
         allExpressionsSumWithoutPrecedence += calculatorWithoutPrecedence.evaluate()
         allExpressionsSumWithPrecedence += calculatorWithPrecedence.evaluate()
 
