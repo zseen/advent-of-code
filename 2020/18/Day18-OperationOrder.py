@@ -10,9 +10,11 @@ MULTIPLICATION = "*"
 OPENING_PARENTHESIS = "("
 CLOSING_PARENTHESIS = ")"
 
+
 class OperationOrder(Enum):
     NO_PREFERENCE = "no preference",
     ADDITION_PREFERENCE = "addition preference"
+
 
 class Calculator:
     def __init__(self, expression: str, operationOrder: Enum):
@@ -26,10 +28,10 @@ class Calculator:
 
         return self.evaluateWithoutParentheses()
 
-    def _extractInnermostParenthesis(self, startingIndex: int):
+    def _extractInnermostParenthesis(self, startingIndex: int) -> None:
         lastOpeningParenthesisIndex, closingParenthesisIndex = self._findInnermostOpeningParenthesisIndex(startingIndex)
         evaluatedSubExpression = str(self.evaluateWithoutParentheses(lastOpeningParenthesisIndex + 1,
-                                                                 closingParenthesisIndex))
+                                                                     closingParenthesisIndex))
         self._substitutePartInExpression(evaluatedSubExpression, lastOpeningParenthesisIndex, closingParenthesisIndex)
 
     def _findInnermostOpeningParenthesisIndex(self, startingIndex: int) -> Tuple[int, int]:
@@ -43,7 +45,6 @@ class Calculator:
             elif self._expression[i] == CLOSING_PARENTHESIS:
                 return (lastOpeningParenthesesIndex, i)
 
-
     def _substitutePartInExpression(self, evaluatedSubExpression: str, startingPosition: int, endingPosition: int) -> None:
         if startingPosition >= len(self._expression) or endingPosition >= len(self._expression):
             raise ValueError("Starting or ending index larger than expression length.")
@@ -56,14 +57,13 @@ class Calculator:
             startingIndex = 0
             endingIndex = len(self._expression)
 
-
         if self._operationOrder == OperationOrder.ADDITION_PREFERENCE:
             return Calculator._calculateOperationsWithPrecedence(self._expression[startingIndex: endingIndex])
 
         return Calculator._calculateOperationsWithoutPrecedence(self._expression[startingIndex: endingIndex])
 
     @staticmethod
-    def _calculateOperationsWithPrecedence(expression) -> int:
+    def _calculateOperationsWithPrecedence(expression: List[str]) -> int:
         Calculator._evaluateAllAdditions(expression)
         Calculator._evaluateAllMultiplications(expression)
 
@@ -75,39 +75,35 @@ class Calculator:
     @staticmethod
     def _evaluateAllAdditions(expression: List[str]) -> None:
         while ADDITION in expression:
-            Calculator._evaluateSingleAddition(expression)
-
+            additionIndex = expression.index(ADDITION)
+            Calculator._helpEvaluate(expression, additionIndex, lambda a, b: int(a) + int(b))
 
     @staticmethod
-    def _evaluateAllMultiplications(expression) -> None:
+    def _evaluateAllMultiplications(expression: List[str]) -> None:
         while MULTIPLICATION in expression:
-            Calculator._evaluateSingleMultiplication(expression)
-
-
-    @staticmethod
-    def _calculateOperationsWithoutPrecedence(expression) -> int:
-        result = int(expression[0])
-        for i in range(1, len(expression) - 1, 2):
-            if expression[i] == ADDITION:
-                result += int(expression[i + 1])
-            elif expression[i] == MULTIPLICATION:
-                result *= int(expression[i + 1])
-        return result
+            multiplicationIndex = expression.index(MULTIPLICATION)
+            Calculator._helpEvaluate(expression, multiplicationIndex, lambda a, b: int(a) * int(b))
 
     @staticmethod
-    def _evaluateSingleAddition(expression):
-        additionIndex = expression.index(ADDITION)
-        evaluatedSubExpression = int(expression[additionIndex - 1]) + int(expression[additionIndex + 1])
-        expression[additionIndex - 1] = str(evaluatedSubExpression)
-        del expression[additionIndex: additionIndex + 2]
+    def _calculateOperationsWithoutPrecedence(expression: List[str]) -> int:
+        while len(expression) > 1:
+            if expression[1] == ADDITION:
+                Calculator._helpEvaluate(expression, 1, lambda a, b: int(a) + int(b))
+            elif expression[1] == MULTIPLICATION:
+                Calculator._helpEvaluate(expression, 1, lambda a, b: int(a) * int(b))
+            else:
+                raise ValueError("Problem with expression format.")
+
+        if not expression or not expression[0].isnumeric():
+            raise ValueError("Error after evaluating additions and multiplications.")
+
+        return int(expression[0])
 
     @staticmethod
-    def _evaluateSingleMultiplication(expression):
-        multiplicationIndex = expression.index(MULTIPLICATION)
-        evaluatedSubExpression = int(expression[multiplicationIndex - 1]) * int(expression[multiplicationIndex + 1])
-        expression[multiplicationIndex - 1] = str(evaluatedSubExpression)
-        del expression[multiplicationIndex: multiplicationIndex + 2]
-
+    def _helpEvaluate(expression: List[str], index: int, func: callable):
+        result = func(expression[index - 1], expression[index + 1])
+        expression[index - 1] = str(result)
+        del expression[index: index + 2]
 
 
 def getExpressions(inputFileName: str) -> List[str]:
@@ -119,42 +115,34 @@ def getExpressions(inputFileName: str) -> List[str]:
     return expressions
 
 
+def sumAllExpressions(allExpressions: List[str], operationOrderPreference: Enum) -> int:
+    allExpressionsSum = 0
+    for expression in allExpressions:
+        calculator = Calculator(expression, operationOrderPreference)
+        allExpressionsSum += calculator.evaluate()
 
+    return allExpressionsSum
 
 
 def main():
     allExpressions = getExpressions(INPUT_FILE)
 
-    allExpressionsSumWithoutPrecedence = 0
-    allExpressionsSumWithPrecedence = 0
-
-    for expression in allExpressions:
-        calculatorWithoutPrecedence = Calculator(expression, OperationOrder.NO_PREFERENCE)
-        calculatorWithPrecedence = Calculator(expression, OperationOrder.ADDITION_PREFERENCE)
-        allExpressionsSumWithoutPrecedence += calculatorWithoutPrecedence.evaluate()
-        allExpressionsSumWithPrecedence += calculatorWithPrecedence.evaluate()
-
+    allExpressionsSumWithoutPrecedence = sumAllExpressions(allExpressions, OperationOrder.NO_PREFERENCE)
     print(allExpressionsSumWithoutPrecedence)  # 45283905029161
+
+    allExpressionsSumWithPrecedence = sumAllExpressions(allExpressions, OperationOrder.ADDITION_PREFERENCE)
     print(allExpressionsSumWithPrecedence)  # 216975281211165
 
 
 class CalculatorTester(unittest.TestCase):
-    def test_calculate_operationOrderDoesNotMatter_correctSumReturned(self):
+    def test_evaluate_operationOrderNoPreference_correctSumReturned(self):
         allExpressions = getExpressions(TEST_INPUT_FILE)
-        allExpressionsSum = 0
-        for expression in allExpressions:
-            calculator = Calculator(expression, OperationOrder.NO_PREFERENCE)
-            allExpressionsSum += calculator.evaluate()
-
+        allExpressionsSum = sumAllExpressions(allExpressions, OperationOrder.NO_PREFERENCE)
         self.assertEqual(26457, allExpressionsSum)
 
-    def test_calculate_operationOrderMatters_correctSumReturned(self):
+    def test_evaluate_operationOrderAdditionPreference_correctSumReturned(self):
         allExpressions = getExpressions(TEST_INPUT_FILE)
-        allExpressionsSum = 0
-        for expression in allExpressions:
-            calculator = Calculator(expression, OperationOrder.ADDITION_PREFERENCE)
-            allExpressionsSum += calculator.evaluate()
-
+        allExpressionsSum = sumAllExpressions(allExpressions, OperationOrder.ADDITION_PREFERENCE)
         self.assertEqual(694173, allExpressionsSum)
 
 
