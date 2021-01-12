@@ -1,14 +1,70 @@
 import unittest
 from typing import List, Dict
-from copy import  deepcopy
 import re
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 TEST_INPUT_FILE_TWO = "test_input_two.txt"
 
-def getInput(fileName: str):
-    rules: Dict[int, List[str]] = {}
+RulesType = Dict[int, List[str]]
+
+
+class ValidMessagesFinder:
+    def __init__(self, rules: RulesType, messages: List[str]):
+        self._rules = rules
+        self._messages = messages
+        self._resolvedRuleNumToValues: Dict[int, str] = dict()
+
+    def getAllValidMessagesCount(self) -> int:
+        self._resolveRules()
+        return len([message for message in self._messages if self._isMessageValid(message)])
+
+    def _resolveRules(self) -> None:
+        self._resolvedRuleNumToValues = self._initializeResolvedNumToValues()
+
+        while len(self._resolvedRuleNumToValues) != len(self._rules):
+            for key, values in self._rules.items():
+                if key not in self._resolvedRuleNumToValues:
+                    resolvedValue = self._createResolvedValueFromValues(values)
+                    if resolvedValue:
+                        self._resolvedRuleNumToValues[key] = "(" + resolvedValue + ")"
+
+    def _initializeResolvedNumToValues(self) -> Dict[int, str]:
+        resolvedNumToValues: Dict[int, str] = dict()
+        for key, value in self._rules.items():
+            if "a" in value:
+                resolvedNumToValues[key] = "a"
+            elif "b" in value:
+                resolvedNumToValues[key] = "b"
+        return resolvedNumToValues
+
+
+    def _createResolvedValueFromValues(self, values: List[str]) -> str:
+        resolvedValue: str = ""
+        for value in values:
+            if value.isnumeric() and int(value) not in self._resolvedRuleNumToValues:
+                return ""
+            resolvedValue += self._buildResolvedValue(value)
+        return resolvedValue
+
+
+    def _buildResolvedValue(self, value: str) -> str:
+        if value.isnumeric():
+            return self._resolvedRuleNumToValues[int(value)]
+        elif value == "|":
+            return value
+        raise ValueError("Unexpected character + ", value)
+
+
+    def _isMessageValid(self, wordCandidate: str) -> re.Match:
+        if 0 not in self._resolvedRuleNumToValues :
+            raise ValueError("0 not in resolvedNumToValues.")
+
+        patternForMessage: str = self._resolvedRuleNumToValues[0]
+        return re.fullmatch(patternForMessage, wordCandidate)
+
+def getInput(fileName: str) -> (RulesType, List[str]):
+    rules: RulesType= {}
 
     with open(fileName, "r") as inputFile:
         lines = inputFile.read()
@@ -19,64 +75,12 @@ def getInput(fileName: str):
             rawRuleSplit = rawRule.split(": ")
             rules[int(rawRuleSplit[0])] = rawRuleSplit[1].strip('""').split(" ")
 
-        messages= linesChunks[1].split("\n")
+        messages: List[str] = linesChunks[1].split("\n")
 
     return rules, messages
 
 
-
-def resolve(rules):
-    resolvedNumToValues = initializeResolvedNumToValues(rules)
-
-    while len(resolvedNumToValues) != len(rules):
-        for key, values in rules.items():
-            if key not in resolvedNumToValues:
-                resolvedValue = createResolvedValueFromValues(values, resolvedNumToValues)
-                if resolvedValue:
-                    resolvedNumToValues[key] = "(" + resolvedValue + ")"
-
-    if 0 not in resolvedNumToValues:
-        raise ValueError("0 not in resolvedNumToValues.")
-
-    return resolvedNumToValues[0]
-
-def initializeResolvedNumToValues(rules):
-    resolvedNumToValues: Dict[int, str] = dict()
-    for key, values in rules.items():
-        if "a" in values:
-            resolvedNumToValues[key] = "a"
-        elif "b" in values:
-            resolvedNumToValues[key] = "b"
-    return resolvedNumToValues
-
-
-def createResolvedValueFromValues(values, resolvedNumToValues):
-    resolvedValue = ""
-    for value in values:
-        if value.isnumeric() and int(value) not in resolvedNumToValues:
-            return ""
-        resolvedValue += buildResolvedValue(value, resolvedNumToValues)
-    return resolvedValue
-
-
-
-def buildResolvedValue(value, resolvedNumToValues):
-    if value.isnumeric():
-        return resolvedNumToValues[int(value)]
-    elif value == "|":
-        return "|"
-
-
-def getAllValidMessagesCount(messages: List[str], rules):
-    return len([message for message in messages if isMessageValid(message, rules)])
-
-
-
-def isMessageValid(wordCandidate: str, rules):
-    patternForMessage = resolve(rules)
-    return re.fullmatch(patternForMessage, wordCandidate)
-
-
 rules, messages = getInput(INPUT_FILE)
-validMessages = getAllValidMessagesCount(messages, rules)
-print(validMessages)
+validMessagesFinder = ValidMessagesFinder(rules, messages)
+
+print(validMessagesFinder.getAllValidMessagesCount())
