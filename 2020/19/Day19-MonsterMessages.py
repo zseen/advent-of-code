@@ -79,7 +79,7 @@ class ValidMessagesCounterForLoopyRules(ValidMessagesCounter):
         if not 42 in self._ruleNumToDecipheredValue or not 31 in self._ruleNumToDecipheredValue:
             raise ValueError("42 or 31 not in ruleNumToDecipheredValue.")
 
-        regexBodyFor11 = ""
+        regexBodyFor11: str = ""
         for i in range(1, 5):
             regexBodyFor11 += self._ruleNumToDecipheredValue[42] + "{" + str(i) + "}" + self._ruleNumToDecipheredValue[31] + "{" + str(i) + "}" + "|"
 
