@@ -1,10 +1,12 @@
 import unittest
 from typing import List, Dict
 import re
+from copy import deepcopy
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 TEST_INPUT_FILE_TWO = "test_input_two.txt"
+TEST_INPUT_FILE_THREE = "test_input_three.txt"
 
 RulesType = Dict[int, List[str]]
 
@@ -14,6 +16,9 @@ class ValidMessagesFinder:
         self._rules = rules
         self._messages = messages
         self._resolvedRuleNumToValues: Dict[int, str] = dict()
+
+    def getResolvedRuleNumToValues(self):
+        return self._resolvedRuleNumToValues
 
     def getAllValidMessagesCount(self) -> int:
         self._resolveRules()
@@ -28,6 +33,8 @@ class ValidMessagesFinder:
                     resolvedValue = self._createResolvedValueFromValues(values)
                     if resolvedValue:
                         self._resolvedRuleNumToValues[key] = "(" + resolvedValue + ")"
+
+
 
     def _initializeResolvedNumToValues(self) -> Dict[int, str]:
         resolvedNumToValues: Dict[int, str] = dict()
@@ -63,6 +70,40 @@ class ValidMessagesFinder:
         patternForMessage: str = self._resolvedRuleNumToValues[0]
         return re.fullmatch(patternForMessage, wordCandidate)
 
+
+class ResolveLoopyRules(ValidMessagesFinder):
+    def __init__(self, rules: RulesType, messages: List[str]):
+        super().__init__(rules, messages)
+        #self.updatedRules = updatedRules
+        self.messages = messages
+        self._resolvedRuleNumToValues: Dict[int, str] = dict()
+
+
+    def resolveUpdatedRules(self):
+        self._resolveRules()
+
+    def getValidMessages(self):
+        self.resolveUpdatedRules()
+        validMessages = []
+        for message in self.messages:
+            if self.handleSpecial(message) or self._isMessageValid(message):
+                validMessages.append(message)
+
+        return len(validMessages)
+
+    def handleSpecial(self, currentMessage):
+        #8: 42 | 42 8
+        #11: 42 31 | 42 11 31
+        pass
+
+
+
+
+
+
+
+        
+
 def getInput(fileName: str) -> (RulesType, List[str]):
     rules: RulesType= {}
 
@@ -80,7 +121,63 @@ def getInput(fileName: str) -> (RulesType, List[str]):
     return rules, messages
 
 
-rules, messages = getInput(INPUT_FILE)
+rules, messages = getInput(TEST_INPUT_FILE_THREE)
 validMessagesFinder = ValidMessagesFinder(rules, messages)
-
 print(validMessagesFinder.getAllValidMessagesCount())
+
+
+
+resolvedRuleNumToValues = validMessagesFinder.getResolvedRuleNumToValues()
+regexForEight = resolvedRuleNumToValues[8]
+regexForFortyTwo = resolvedRuleNumToValues[42]
+#print(regexForFortyTwo)
+
+regexForModifiedEight = "(" + regexForFortyTwo + "+" + ")"
+
+#print(regexForModifiedEight)
+
+regexForEleven = resolvedRuleNumToValues[11]
+regexForThirtyOne = resolvedRuleNumToValues[31]
+
+regexForModifiedEleven = "(" + '|'.join([f'{regexForFortyTwo}{{{n}}}{regexForThirtyOne}{{{n}}}' for n in range(1, 5)]) + ")"
+
+multipliedFortyTwo = ""
+multipliedThirtyOne = ""
+#print(regexForFortyTwo)
+#print(regexForThirtyOne)
+fullReg = ""
+for i in range(1, 5):
+    multipliedFortyTwo = regexForFortyTwo
+    multipliedFortyTwo += "{" + str(i) + "}"
+
+    multipliedThirtyOne = regexForThirtyOne
+    multipliedThirtyOne += "{" + str(i) + "}"
+    fullReg += multipliedFortyTwo + multipliedThirtyOne + "|"
+
+
+
+manualEleven = "("  + fullReg[:-1] + ")"
+
+
+z = regexForModifiedEight + manualEleven
+print(z)
+
+
+
+
+regexForModifiedZero = regexForModifiedEight + regexForModifiedEleven
+print(regexForModifiedZero)
+
+
+print(z == regexForModifiedZero)
+
+#print(regexForModifiedZero)
+
+
+
+
+# rulesSecond, messagesSecond = getInput(TEST_INPUT_FILE_TWO)
+# rulesSecond[8] = ["42", "|", "42", "8"]
+# rulesSecond[11] = ["42", "31", "|", "42", "11", "31"]
+# vm = ResolveLoopyRules(rulesSecond, messagesSecond)
+# print(vm.getValidMessages())
