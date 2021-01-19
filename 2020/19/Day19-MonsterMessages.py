@@ -121,7 +121,7 @@ def getInput(fileName: str) -> (RulesType, List[str]):
     return rules, messages
 
 
-rules, messages = getInput(TEST_INPUT_FILE_THREE)
+rules, messages = getInput(INPUT_FILE)
 validMessagesFinder = ValidMessagesFinder(rules, messages)
 print(validMessagesFinder.getAllValidMessagesCount())
 
@@ -130,49 +130,25 @@ print(validMessagesFinder.getAllValidMessagesCount())
 resolvedRuleNumToValues = validMessagesFinder.getResolvedRuleNumToValues()
 regexForEight = resolvedRuleNumToValues[8]
 regexForFortyTwo = resolvedRuleNumToValues[42]
-#print(regexForFortyTwo)
 
 regexForModifiedEight = "(" + regexForFortyTwo + "+" + ")"
 
-#print(regexForModifiedEight)
-
-regexForEleven = resolvedRuleNumToValues[11]
 regexForThirtyOne = resolvedRuleNumToValues[31]
 
-regexForModifiedEleven = "(" + '|'.join([f'{regexForFortyTwo}{{{n}}}{regexForThirtyOne}{{{n}}}' for n in range(1, 5)]) + ")"
-
-multipliedFortyTwo = ""
-multipliedThirtyOne = ""
-#print(regexForFortyTwo)
-#print(regexForThirtyOne)
-fullReg = ""
+regexBodyForEleven = ""
 for i in range(1, 5):
-    multipliedFortyTwo = regexForFortyTwo
-    multipliedFortyTwo += "{" + str(i) + "}"
-
-    multipliedThirtyOne = regexForThirtyOne
-    multipliedThirtyOne += "{" + str(i) + "}"
-    fullReg += multipliedFortyTwo + multipliedThirtyOne + "|"
+    regexBodyForEleven += regexForFortyTwo + "{" + str(i) + "}" + regexForThirtyOne + "{" + str(i) + "}" + "|"
 
 
+regexForModifiedEleven = "("  + regexBodyForEleven[:-1] + ")"
+regexModifiedForZero = regexForModifiedEight + regexForModifiedEleven
 
-manualEleven = "("  + fullReg[:-1] + ")"
+cnt = 0
+for message in messages:
+    if re.fullmatch(regexModifiedForZero, message):
+        cnt += 1
 
-
-z = regexForModifiedEight + manualEleven
-print(z)
-
-
-
-
-regexForModifiedZero = regexForModifiedEight + regexForModifiedEleven
-print(regexForModifiedZero)
-
-
-print(z == regexForModifiedZero)
-
-#print(regexForModifiedZero)
-
+print(cnt)
 
 
 
