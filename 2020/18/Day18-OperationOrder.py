@@ -147,5 +147,5 @@ class CalculatorTester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    main()
+    # main()
     unittest.main()
