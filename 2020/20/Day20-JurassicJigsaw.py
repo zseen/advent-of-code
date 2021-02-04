@@ -99,8 +99,10 @@ class Tile:
 class Puzzle:
     def __init__(self, tiles: List[Tile]):
         self.corners: List[Tile] = []
+        self.edges: List[Tile] = []
         self.tiles = tiles
         self.correctlyAlignedTiles: Set[Tile] = set()
+        self.puzzleWithPiecesPositioned = [ [ 0 for _ in range(len(self.tiles[0].topEdge)) ] for _ in range(len(self.tiles)) ]
 
 
 
@@ -124,6 +126,8 @@ class Puzzle:
                 self.alignTilesToAlredyAlignedTiles()
 
             self.findCorners()
+            self.findEdges()
+            self.putPuzzleTogether()
             return self.calculateProduct()
 
     def doTilesAlign(self, tile1: Tile, tile2: Tile):
@@ -225,10 +229,10 @@ class Puzzle:
             if len(tile.neighbourTiles) == 2:
                 self.corners.append(tile)
 
-    # initial run: find the first tile that does not need to be flipped or rotated, and it will be the fixed reference
-    # (if no such, then pick one tile, rotate it, then try to align with a normal one (then lfip, then rotate and flip)
-    # if still no success, then have this rotated/flipped tile, and try to align it with a rotated/flipped/both tile)
-    # then try to align a neighbour normally, if not possible, then rotate and flip the neighbour
+    def findEdges(self):
+        for tile in self.tiles:
+            if len(tile.neighbourTiles) == 3:
+                self.edges.append(tile)
 
 
     def isAlignmentFound(self, tile1, tile2):
@@ -239,6 +243,15 @@ class Puzzle:
             return True
         return False
 
+
+    def putPuzzleTogether(self):
+        topLeftCorner = self.findTopLeftCorner()
+        print(topLeftCorner.id)
+
+    def findTopLeftCorner(self):
+    
+
+        raise ValueError("Top left corner not found")
 
 
 
