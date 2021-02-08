@@ -11,24 +11,12 @@ class Tile:
     def __init__(self, id: str, pixels: List[str]):
         self.id = id
         self.pixels = pixels
-        # self.topLeftPixel = None
-        # self.topRightPixel = None
-        # self.bottomLeftPixel = None
-        # self.bottomRightPixel = None
         self.topEdge = None
         self.bottomEdge = None
         self.leftEdge = None
         self.rightEdge = None
         self.neighbourTiles = set()
 
-    def setCornerPixels(self):
-        if not self.pixels:
-            raise ValueError("Problem with setting corners")
-
-        self.topLeftPixel = self.pixels[0][0]
-        self.topRightPixel = self.pixels[0][-1]
-        self.bottomLeftPixel = self.pixels[-1][0]
-        self.bottomRightPixel = self.pixels[-1][-1]
 
     def setEdges(self):
         if not self.pixels:
@@ -45,6 +33,10 @@ class Tile:
             edge += item[pixelPosition]
 
         return edge
+    
+    def flipSideways(self):
+        self.flipPixelsSideways()
+        self.setEdges()
 
     def flipPixelsSideways(self):
         pixelsReversed: List[str] = []
@@ -52,42 +44,8 @@ class Tile:
             pixelsReversed.append(line[::-1])
 
         self.pixels = pixelsReversed
-
-
-    def flipSideways(self):
-        #self.topLeftPixel, self.topRightPixel = self.topRightPixel, self.topLeftPixel
-        #self.bottomLeftPixel, self.bottomRightPixel = self.bottomRightPixel, self.bottomLeftPixel
-        self.flipPixelsSideways()
-        self.setEdges()
-
-
-    def flipUpsideDown(self):
-        #self.bottomLeftPixel, self.topLeftPixel = self.topLeftPixel, self.bottomLeftPixel
-        #self.bottomRightPixel, self.topRightPixel = self.topRightPixel, self.bottomRightPixel
-        self.pixels = self.pixels[::-1]
-        self.setEdges()
-
+    #build column naming
     def rotateRight(self):
-        # currentTopLeftPixel = self.topLeftPixel
-        # self.topLeftPixel = self.bottomLeftPixel
-        # currentTopRigtPixel = self.topRightPixel
-        # self.topRightPixel = currentTopLeftPixel
-        # currentBottomRightPixel = self.bottomRightPixel
-        # self.bottomLeftPixel = currentBottomRightPixel
-        # self.bottomRightPixel = currentTopRigtPixel
-
-        # currentTopEdge = self.topEdge
-        # self.topEdge = self.leftEdge
-        #
-        # self.leftEdge = self.bottomEdge
-        #
-        # currentRightEdge = self.rightEdge
-        # self.bottomEdge = currentRightEdge
-        #
-        # self.rightEdge = currentTopEdge
-
-        #emptyMatrix = [ [ 0 for i in range(len(self.pixels[0])) ] for j in range(len(self.pixes)) ]
-
         edges = []
         for i in range(0, len(self.pixels)):
             edges.append(self.buildEdge(i)[::-1])
@@ -102,8 +60,7 @@ class Puzzle:
         self.edges: List[Tile] = []
         self.tiles = tiles
         self.correctlyAlignedTiles: Set[Tile] = set()
-        self.puzzleWithPiecesPositioned = [ [ 0 for _ in range(len(self.tiles[0].topEdge)) ] for _ in range(len(self.tiles)) ]
-
+        self.puzzleWithPiecesPositioned = [[ 0 for _ in range(int(math.sqrt(len(self.tiles))))] for _ in range(int(math.sqrt(len(self.tiles))))]
 
 
     def puzzleTiles(self):
@@ -113,24 +70,29 @@ class Puzzle:
                     if i != j:
                         tile1 = self.tiles[i]
                         tile2 = self.tiles[j]
-                        if self.isAlignmentFound(tile1, tile2):
-                            self.correctlyAlignedTiles.add(tile1)
-                            self.correctlyAlignedTiles.add(tile2)
-
-                        if self.doTilesAlign(tile1, tile2):
+                        # if self.isAlignmentFound(tile1, tile2):
+                        #     self.correctlyAlignedTiles.add(tile1)
+                        #     self.correctlyAlignedTiles.add(tile2)
+                        if self.areTilesNeighbours(tile1, tile2):
                             tile1.neighbourTiles.add(tile2)
                             tile2.neighbourTiles.add(tile1)
 
 
-            if len(self.correctlyAlignedTiles) != len(self.tiles):
-                self.alignTilesToAlredyAlignedTiles()
-
             self.findCorners()
-            self.findEdges()
+            self.findEdgeTiles()
             self.putPuzzleTogether()
             return self.calculateProduct()
+        
+    def isAlignmentFound(self, tile1, tile2):
+        if tile1.topEdge == tile2.bottomEdge or tile1.bottomEdge == tile2.topEdge:
+            return True
 
-    def doTilesAlign(self, tile1: Tile, tile2: Tile):
+        if tile1.rightEdge == tile2.leftEdge or tile1.leftEdge == tile2.rightEdge:
+            return True
+
+        return False
+
+    def areTilesNeighbours(self, tile1: Tile, tile2: Tile):
         for edge in [tile1.topEdge, tile1.bottomEdge, tile1.leftEdge, tile1.rightEdge]:
             if edge in [tile2.topEdge, tile2.bottomEdge, tile2.rightEdge, tile2.leftEdge]:
                 return True
@@ -142,79 +104,37 @@ class Puzzle:
 
         return False
 
-    def alignTilesToAlredyAlignedTiles(self):
-        while True:
-            for correctlyAlignedTile in list(self.correctlyAlignedTiles):
-                neighbours = correctlyAlignedTile.neighbourTiles
-                for neighbour in neighbours:
-                    if neighbour not in self.correctlyAlignedTiles:
-                        self.alignTileToAlignedTile(neighbour, correctlyAlignedTile)
-                if len(self.correctlyAlignedTiles) == len(self.tiles):
-                    return
+    # def alignTilesToAlredyAlignedTiles(self) -> None:
+    #     while True:
+    #         for correctlyAlignedTile in list(self.correctlyAlignedTiles):
+    #             neighbours = correctlyAlignedTile.neighbourTiles
+    #             for neighbour in neighbours:
+    #                 if neighbour not in self.correctlyAlignedTiles:
+    #                     self.alignTileToAlignedTile(neighbour, correctlyAlignedTile)
+    #             if len(self.correctlyAlignedTiles) == len(self.tiles):
+    #                 return
 
 
+    def alignTileToAlignedTile(self, neighbour, correctlyAlignedTile) -> bool:
+        for _ in range(0, 4):
+            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
+            if neighbour.leftEdge == correctlyAlignedTile.rightEdge:
+                self.correctlyAlignedTiles.add(neighbour)
+                return True
+            neighbour.rotateRight()
 
 
-    def alignTileToAlignedTile(self, neighbour, correctlyAlignedTile) -> None:
-        if not self.isHorizontalFlippingNeeded(neighbour, correctlyAlignedTile):
-            for _ in range(0, 4):
-                if self.isAlignmentFound(neighbour, correctlyAlignedTile):
-                    self.correctlyAlignedTiles.add(neighbour)
-                    return
-                neighbour.rotateRight()
-
-
-            neighbour.flipUpsideDown()
-            for _ in range(0, 4):
-                if self.isAlignmentFound(neighbour, correctlyAlignedTile):
-                    self.correctlyAlignedTiles.add(neighbour)
-                    return
-                neighbour.rotateRight()
-
-
-            raise ValueError("Horizontal flipping was not needed, still not aligning: ", correctlyAlignedTile.id, neighbour.id)
-
-        if self.isHorizontalFlippingNeeded(neighbour, correctlyAlignedTile):
-            neighbour.flipSideways()
-
-            for _ in range(0, 4):
-                if self.isAlignmentFound(neighbour, correctlyAlignedTile):
-                    self.correctlyAlignedTiles.add(neighbour)
-                    return
-                neighbour.rotateRight()
-
-            neighbour.flipUpsideDown()
-            for _ in range(0, 4):
-                if self.isAlignmentFound(neighbour, correctlyAlignedTile):
-                    self.correctlyAlignedTiles.add(neighbour)
-                    return
-                neighbour.rotateRight()
-
-        raise ValueError("somehow these tiles still dont align: ", correctlyAlignedTile, neighbour)
-
-
-
-    def isHorizontalFlippingNeeded(self, tile1, tile2):
-        if tile1.topEdge == tile2.topEdge or tile1.bottomEdge == tile2.bottomEdge:
-            return True
-
-        # if tile1.topEdge == tile2.bottomEdge[::-1] or tile1.bottomEdge == tile2.topEdge[::-1]:
-        #     return True
+        neighbour.flipSideways()
+        for _ in range(0, 4):
+            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
+            if neighbour.leftEdge == correctlyAlignedTile.rightEdge:
+                self.correctlyAlignedTiles.add(neighbour)
+                return True
+            neighbour.rotateRight()
 
         return False
+        #raise ValueError("Tiles still dont match properly: ", neighbour.id, correctlyAlignedTile.id)
 
-
-
-    def isVerticalFlippingNeeded(self, tile1, tile2) -> bool:
-        if tile1.leftEdge == tile2.rightEdge[::-1] or tile1.rightEdge == tile2.leftEdge[::-1]:
-            return True
-
-        if tile1.leftEdge == tile2.leftEdge or tile1.rightEdge == tile2.rightEdge:
-            return True
-
-        return False
-
-        #raise ValueError("It looks like tile1 and tile2 are not neighbours after all.")
 
 
     def calculateProduct(self):
@@ -229,36 +149,86 @@ class Puzzle:
             if len(tile.neighbourTiles) == 2:
                 self.corners.append(tile)
 
-    def findEdges(self):
+    def findEdgeTiles(self):
         for tile in self.tiles:
             if len(tile.neighbourTiles) == 3:
                 self.edges.append(tile)
 
+    def alignNeighbourTopBottomWay(self, neighbour, correctlyAlignedTile):
+        for _ in range(0, 4):
+            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
+            if neighbour.topEdge == correctlyAlignedTile.bottomEdge:
+                self.correctlyAlignedTiles.add(neighbour)
+                return True
+            neighbour.rotateRight()
 
-    def isAlignmentFound(self, tile1, tile2):
-        if tile1.topEdge == tile2.bottomEdge or tile1.bottomEdge == tile2.topEdge:
-            return True
 
-        if tile1.rightEdge == tile2.leftEdge or tile1.leftEdge == tile2.rightEdge:
-            return True
+        neighbour.flipSideways()
+        for _ in range(0, 4):
+            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
+            if neighbour.topEdge == correctlyAlignedTile.bottomEdge:
+                self.correctlyAlignedTiles.add(neighbour)
+                return True
+            neighbour.rotateRight()
+
         return False
+
 
 
     def putPuzzleTogether(self):
         topLeftCorner = self.findTopLeftCorner()
-        print(topLeftCorner.id)
+
+        self.puzzleWithPiecesPositioned[0][0] = topLeftCorner
+        currentTile = topLeftCorner
+
+        # fill up the first row
+        for columnIndex in range(1, len(self.puzzleWithPiecesPositioned[0])):
+            for neigbour in currentTile.neighbourTiles:
+                if self.alignTileToAlignedTile(neigbour, currentTile):
+                    self.puzzleWithPiecesPositioned[0][columnIndex] = neigbour
+                    currentTile = neigbour
+
+        # fill up the rest
+        for j in range(1, len(self.puzzleWithPiecesPositioned)):
+            for i in range(0, len(self.puzzleWithPiecesPositioned[0])):
+                currentTile = self.puzzleWithPiecesPositioned[j-1][i]
+                for neigbour in currentTile.neighbourTiles:
+                    if self.alignNeighbourTopBottomWay(neigbour, currentTile):
+                        self.puzzleWithPiecesPositioned[j][i] = neigbour
+
+
+        for j in range(0, len(self.puzzleWithPiecesPositioned)):
+            for i in range(0, len(self.puzzleWithPiecesPositioned[0])):
+                print(self.puzzleWithPiecesPositioned[j][i].id, " ", end="")
+            print("")
+
 
     def findTopLeftCorner(self):
-    
+        noTopNeighbour = True
+        noLeftNeighbour = True
+        for corner in self.corners:
+            neighboursEdges = []
+            for neighbour in corner.neighbourTiles:
+                neighboursEdges.append(neighbour.topEdge)
+                neighboursEdges.append(neighbour.bottomEdge)
+                neighboursEdges.append(neighbour.rightEdge)
+                neighboursEdges.append(neighbour.leftEdge)
+
+            for _ in range(0, 4):
+                if corner.topEdge in neighboursEdges:
+                    noTopNeighbour = False
+                if corner.leftEdge in neighboursEdges:
+                    noLeftNeighbour = False
+
+                if noLeftNeighbour and noTopNeighbour:
+                    return corner
+
+                noTopNeighbour = True
+                noLeftNeighbour = True
+                corner.rotateRight()
+
 
         raise ValueError("Top left corner not found")
-
-
-
-
-
-
-
 
 
 def getInput(fileName: str):
@@ -283,45 +253,17 @@ def createTile(rawTileData) -> Tile:
     tiles = list(rawTileDataSplit[2:])
 
     tile = Tile(tileID, tiles)
-    #tile.setCornerPixels()
     tile.setEdges()
     return tile
 
-tiles = getInput(TEST_INPUT_FILE)
-puzzle = Puzzle(tiles)
-print(puzzle.puzzleTiles() == 20899048083289)
+# tiles = getInput(TEST_INPUT_FILE)
+# puzzle = Puzzle(tiles)
+# print(puzzle.puzzleTiles() == 20899048083289)
 
-#28057939502729
+# #28057939502729
 tiles2 = getInput(INPUT_FILE)
 puzzle2 = Puzzle(tiles2)
 print(puzzle2.puzzleTiles() == 28057939502729)
-
-
-# print(thatOneTile.topEdge)
-# print(thatOneTile.rightEdge)
-# print(thatOneTile.bottomEdge)
-# print(thatOneTile.leftEdge)
-#
-# thatOneTile.rotateRight()
-# print("--------------")
-# print(thatOneTile.topEdge)
-# print(thatOneTile.rightEdge)
-# print(thatOneTile.bottomEdge)
-# print(thatOneTile.leftEdge)
-
-# print(thatOneTile.topLeftPixel)
-# print(thatOneTile.topRightPixel)
-# print(thatOneTile.bottomLeftPixel)
-# print(thatOneTile.bottomRightPixel)
-#
-# thatOneTile.flipUpsideDown()
-# print("--------------")
-#
-# print(thatOneTile.topLeftPixel)
-# print(thatOneTile.topRightPixel)
-# print(thatOneTile.bottomLeftPixel)
-# print(thatOneTile.bottomRightPixel)
-
 
 
 
