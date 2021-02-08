@@ -81,6 +81,7 @@ class Puzzle:
             self.findCorners()
             self.findEdgeTiles()
             self.putPuzzleTogether()
+            self.cutEdgesOfCompletedPuzzle()
             return self.calculateProduct()
         
     def isAlignmentFound(self, tile1, tile2):
@@ -231,6 +232,38 @@ class Puzzle:
         raise ValueError("Top left corner not found")
 
 
+    def cutEdgesOfCompletedPuzzle(self):
+        boardWithTrimmedEdges = []
+
+        rowIndex, columnIndex = 0, 0
+
+        tileJindex = 1
+        while rowIndex < 3 and columnIndex < 3 and tileJindex < 30:
+            while tileJindex < 9:
+                currentRow = ""
+                while columnIndex < len(self.puzzleWithPiecesPositioned[0]):
+                    currentTile = self.puzzleWithPiecesPositioned[rowIndex][columnIndex]
+                    for i in range(1, len(currentTile.pixels[0]) - 1):
+                        currentRow += currentTile.pixels[tileJindex][i]
+                    columnIndex += 1
+                boardWithTrimmedEdges.append(currentRow)
+                columnIndex = 0
+                tileJindex += 1
+
+
+            rowIndex+= 1
+            tileJindex = 1
+
+
+
+
+
+        # for j in range(0, len(self.puzzleWithPiecesPositioned)):
+        #     for i in range(0, len(self.puzzleWithPiecesPositioned[0])):
+        #         print(self.puzzleWithPiecesPositioned[j][i].id, " ", end="")
+        #     print("")
+
+
 def getInput(fileName: str):
     tiles: List[Tile] = []
     with open(fileName, "r") as inputFile:
@@ -256,14 +289,14 @@ def createTile(rawTileData) -> Tile:
     tile.setEdges()
     return tile
 
-# tiles = getInput(TEST_INPUT_FILE)
-# puzzle = Puzzle(tiles)
-# print(puzzle.puzzleTiles() == 20899048083289)
+tiles = getInput(TEST_INPUT_FILE)
+puzzle = Puzzle(tiles)
+print(puzzle.puzzleTiles() == 20899048083289)
 
 # #28057939502729
-tiles2 = getInput(INPUT_FILE)
-puzzle2 = Puzzle(tiles2)
-print(puzzle2.puzzleTiles() == 28057939502729)
+# tiles2 = getInput(INPUT_FILE)
+# puzzle2 = Puzzle(tiles2)
+# print(puzzle2.puzzleTiles() == 28057939502729)
 
 
 
