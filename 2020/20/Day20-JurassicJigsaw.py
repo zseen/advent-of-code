@@ -5,6 +5,47 @@ from typing import List, Dict, Set
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
+SEA_MONSTER_PICTURE_FILE = "seaMonster.txt"
+
+class Coordinate:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class SeaMonster:
+    def __init__(self):
+        self.rawInput = []
+        self.coordinates: List[Coordinate] = []
+
+    def readInput(self) -> List[List[str]]:
+        rawInput = []
+        with open(SEA_MONSTER_PICTURE_FILE, "r") as inputFile:
+            lines = inputFile.readlines()
+            for line in lines:
+                emp = []
+                line = line.strip("\n")
+                for char in line:
+                    emp.append(char)
+                rawInput.append(emp)
+        self.rawInput = rawInput
+        return rawInput
+
+    def findCoordinates(self):
+        self.readInput()
+        coordinates = []
+
+        for j in range(0, len(self.rawInput)):
+            for i in range(0, len(self.rawInput[j])):
+                if self.rawInput[j][i] == "#":
+                    coordinates.append(Coordinate(i, j - 1))
+        self.coordinates = sorted(coordinates , key=lambda coordinate: coordinate.x)
+
+
+
+
+
+
+
 
 
 class Tile:
@@ -61,6 +102,7 @@ class Puzzle:
         self.tiles = tiles
         self.correctlyAlignedTiles: Set[Tile] = set()
         self.puzzleWithPiecesPositioned = [[ 0 for _ in range(int(math.sqrt(len(self.tiles))))] for _ in range(int(math.sqrt(len(self.tiles))))]
+        self.allAlignedTilePixelsWithoutBorders: List[str] = []
 
 
     def puzzleTiles(self):
@@ -118,23 +160,19 @@ class Puzzle:
 
     def alignTileToAlignedTile(self, neighbour, correctlyAlignedTile) -> bool:
         for _ in range(0, 4):
-            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
             if neighbour.leftEdge == correctlyAlignedTile.rightEdge:
-                self.correctlyAlignedTiles.add(neighbour)
                 return True
             neighbour.rotateRight()
 
 
         neighbour.flipSideways()
         for _ in range(0, 4):
-            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
             if neighbour.leftEdge == correctlyAlignedTile.rightEdge:
-                self.correctlyAlignedTiles.add(neighbour)
                 return True
             neighbour.rotateRight()
 
+        neighbour.flipSideways()
         return False
-        #raise ValueError("Tiles still dont match properly: ", neighbour.id, correctlyAlignedTile.id)
 
 
 
@@ -157,21 +195,19 @@ class Puzzle:
 
     def alignNeighbourTopBottomWay(self, neighbour, correctlyAlignedTile):
         for _ in range(0, 4):
-            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
             if neighbour.topEdge == correctlyAlignedTile.bottomEdge:
-                self.correctlyAlignedTiles.add(neighbour)
                 return True
             neighbour.rotateRight()
 
 
         neighbour.flipSideways()
         for _ in range(0, 4):
-            #if self.isAlignmentFound(neighbour, correctlyAlignedTile):
             if neighbour.topEdge == correctlyAlignedTile.bottomEdge:
-                self.correctlyAlignedTiles.add(neighbour)
                 return True
             neighbour.rotateRight()
 
+
+        neighbour.flipSideways()
         return False
 
 
@@ -182,12 +218,14 @@ class Puzzle:
         self.puzzleWithPiecesPositioned[0][0] = topLeftCorner
         currentTile = topLeftCorner
 
+
         # fill up the first row
         for columnIndex in range(1, len(self.puzzleWithPiecesPositioned[0])):
             for neigbour in currentTile.neighbourTiles:
                 if self.alignTileToAlignedTile(neigbour, currentTile):
                     self.puzzleWithPiecesPositioned[0][columnIndex] = neigbour
                     currentTile = neigbour
+
 
         # fill up the rest
         for j in range(1, len(self.puzzleWithPiecesPositioned)):
@@ -204,11 +242,46 @@ class Puzzle:
             print("")
 
 
+        #
+        # boardWithTrimmedEdges = []
+        # rowIndex, columnIndex = 0, 0
+        # tileJindex = 0
+        # while rowIndex < 3 and columnIndex < 3 and tileJindex < 30:
+        #     while tileJindex < 10:
+        #         currentRow = ""
+        #         while columnIndex < len(self.puzzleWithPiecesPositioned[0]):
+        #             currentTile = self.puzzleWithPiecesPositioned[rowIndex][columnIndex]
+        #             for i in range(0, len(currentTile.pixels[0])):
+        #                 currentRow += currentTile.pixels[tileJindex][i]
+        #             columnIndex += 1
+        #         boardWithTrimmedEdges.append(currentRow)
+        #         columnIndex = 0
+        #         tileJindex += 1
+        #     rowIndex += 1
+        #     tileJindex = 0
+        #
+        # ct = 0
+        # for line in boardWithTrimmedEdges:
+        #     print(line[0:10], " ", line[10:20], " ", line[20:])
+        #     ct += 1
+        #     if ct == 10:
+        #         print("")
+        #         ct = 0
+
+
+
+
+
+
+
+
     def findTopLeftCorner(self):
-        noTopNeighbour = True
-        noLeftNeighbour = True
+        rightNeighbourFound = False
+        bottomNeighbourFound = False
+
         for corner in self.corners:
             neighboursEdges = []
+
             for neighbour in corner.neighbourTiles:
                 neighboursEdges.append(neighbour.topEdge)
                 neighboursEdges.append(neighbour.bottomEdge)
@@ -216,16 +289,23 @@ class Puzzle:
                 neighboursEdges.append(neighbour.leftEdge)
 
             for _ in range(0, 4):
-                if corner.topEdge in neighboursEdges:
-                    noTopNeighbour = False
-                if corner.leftEdge in neighboursEdges:
-                    noLeftNeighbour = False
+                if corner.rightEdge in neighboursEdges:
+                    rightNeighbourFound = True
 
-                if noLeftNeighbour and noTopNeighbour:
+                if corner.bottomEdge in neighboursEdges:
+                    bottomNeighbourFound = True
+
+                if corner.rightEdge[::-1] in neighboursEdges:
+                    rightNeighbourFound = True
+
+                if corner.bottomEdge[::-1] in neighboursEdges:
+                    bottomNeighbourFound = True
+
+                if rightNeighbourFound and bottomNeighbourFound:
                     return corner
 
-                noTopNeighbour = True
-                noLeftNeighbour = True
+                rightNeighbourFound = False
+                bottomNeighbourFound = False
                 corner.rotateRight()
 
 
@@ -237,8 +317,11 @@ class Puzzle:
 
         rowIndex, columnIndex = 0, 0
 
+
+
         tileJindex = 1
-        while rowIndex < 3 and columnIndex < 3 and tileJindex < 30:
+        # make it reusable!!!!!!!!!!!!
+        while rowIndex < 3 and columnIndex < 3:
             while tileJindex < 9:
                 currentRow = ""
                 while columnIndex < len(self.puzzleWithPiecesPositioned[0]):
@@ -249,19 +332,77 @@ class Puzzle:
                 boardWithTrimmedEdges.append(currentRow)
                 columnIndex = 0
                 tileJindex += 1
-
-
             rowIndex+= 1
             tileJindex = 1
 
+        boardAsTile = Tile("Board", boardWithTrimmedEdges)
+        boardAsTile.setEdges()
+        self.allAlignedTilePixelsWithoutBorders = boardAsTile
+
+        # for i in boardWithTrimmedEdges:
+        #     print(i)
+
+        # print("-------------------")
+        # ct = 0
+        # for line in boardWithTrimmedEdges:
+        #     print(line[0:8], " ", line[8:16], " ", line[16:])
+        #     ct += 1
+        #     if ct == 8:
+        #         print("")
+        #         ct = 0
+
+
+    def alignBoardToFindSeaMonsters(self, seaMonster):
+        for _ in range(0, 4):
+            seaMonsterCount = self.countSeaMonstersInBoard(seaMonster)
+            if seaMonsterCount > 0:
+                #print(self.allAlignedTilePixelsWithoutBorders.topEdge)
+                return seaMonsterCount
+            self.allAlignedTilePixelsWithoutBorders.rotateRight()
+
+
+        self.allAlignedTilePixelsWithoutBorders.flipSideways()
+        for _ in range(0, 4):
+            seaMonsterCount = self.countSeaMonstersInBoard(seaMonster)
+            if seaMonsterCount > 0:
+                return seaMonsterCount
+            self.allAlignedTilePixelsWithoutBorders.rotateRight()
+
+
+        raise ValueError("Not a single sea monster...really?")
+
+
+
+    def countSeaMonstersInBoard(self, seaMonster: SeaMonster):
+        seaMonstersCount = 0
+        seaMonsterCharsFound = 0
+        isSeaMonsterPossible = False
+        seaMonsterLength = 20
+
+
+        for j in range(1, len(self.allAlignedTilePixelsWithoutBorders.pixels) - 1):
+            for i in range(0, (len(self.allAlignedTilePixelsWithoutBorders.pixels[j])-seaMonsterLength)):
+                currentWaterCoordinate = self.allAlignedTilePixelsWithoutBorders.pixels[j][i]
+                if currentWaterCoordinate == "#":
+                    isSeaMonsterPossible = True
+                    for seaMonsterCoordinate in seaMonster.coordinates:
+                        if self.allAlignedTilePixelsWithoutBorders.pixels[i + seaMonsterCoordinate.x][j + seaMonsterCoordinate.y] != "#":
+                            isSeaMonsterPossible = False
+                            seaMonsterCharsFound = 0
+                            break
+                        else:
+                            seaMonsterCharsFound += 1
+                    if seaMonsterCharsFound == 15 and isSeaMonsterPossible:
+                        seaMonstersCount += 1
+                        seaMonsterCharsFound = 0
+
+        return seaMonstersCount
 
 
 
 
-        # for j in range(0, len(self.puzzleWithPiecesPositioned)):
-        #     for i in range(0, len(self.puzzleWithPiecesPositioned[0])):
-        #         print(self.puzzleWithPiecesPositioned[j][i].id, " ", end="")
-        #     print("")
+
+
 
 
 def getInput(fileName: str):
@@ -289,9 +430,21 @@ def createTile(rawTileData) -> Tile:
     tile.setEdges()
     return tile
 
+
+
 tiles = getInput(TEST_INPUT_FILE)
 puzzle = Puzzle(tiles)
 print(puzzle.puzzleTiles() == 20899048083289)
+
+seaMonster = SeaMonster()
+seaMonster.findCoordinates()
+#print(len(seaMonster.coordinates))
+# print(seaMonster.rawInput)
+# for coor in seaMonster.coordinates:
+#     print(coor.x, coor.y)
+
+print(puzzle.alignBoardToFindSeaMonsters(seaMonster))
+
 
 # #28057939502729
 # tiles2 = getInput(INPUT_FILE)
