@@ -3,6 +3,8 @@ import math
 from copy import deepcopy
 from typing import List, Dict, Set
 
+from Tile import Tile
+
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 SEA_MONSTER_PICTURE_FILE = "seaMonster.txt"
@@ -26,54 +28,6 @@ class SeaMonster:
     def setLength(self) -> None:
         self.length = max(self.coordinates, key=lambda coordinate: coordinate.x).x - min(self.coordinates, key=lambda coordinate: coordinate.x).x
 
-
-
-
-class Tile:
-    def __init__(self, id: str, pixels: List[str]):
-        self.id = id
-        self.pixels = pixels
-        self.topEdge = None
-        self.bottomEdge = None
-        self.leftEdge = None
-        self.rightEdge = None
-        self.neighbourTiles = set()
-
-
-    def setEdges(self):
-        if not self.pixels:
-            raise ValueError("Problem with setting edges")
-
-        self.topEdge = self.pixels[0]
-        self.bottomEdge = self.pixels[-1]
-        self.rightEdge = self.buildEdge(-1)
-        self.leftEdge = self.buildEdge(0)
-
-    def buildEdge(self, pixelPosition):
-        edge = ""
-        for item in self.pixels:
-            edge += item[pixelPosition]
-
-        return edge
-    
-    def flipSideways(self):
-        self.flipPixelsSideways()
-        self.setEdges()
-
-    def flipPixelsSideways(self):
-        pixelsReversed: List[str] = []
-        for line in self.pixels:
-            pixelsReversed.append(line[::-1])
-
-        self.pixels = pixelsReversed
-
-    def rotateRight(self):
-        edges = []
-        for i in range(0, len(self.pixels)):
-            edges.append(self.buildEdge(i)[::-1])
-
-        self.pixels = edges
-        self.setEdges()
 
 
 class Puzzle:
@@ -211,8 +165,8 @@ class Puzzle:
         #         currentRow = ""
         #         while columnIndex < len(self.puzzleWithPiecesPositioned[0]):
         #             currentTile = self.puzzleWithPiecesPositioned[rowIndex][columnIndex]
-        #             for i in range(0, len(currentTile.pixels[0])):
-        #                 currentRow += currentTile.pixels[tileJindex][i]
+        #             for i in range(0, len(currentTile.pixelRows[0])):
+        #                 currentRow += currentTile.pixelRows[tileJindex][i]
         #             columnIndex += 1
         #         boardWithTrimmedEdges.append(currentRow)
         #         columnIndex = 0
@@ -276,8 +230,8 @@ class Puzzle:
                 currentRow = ""
                 while columnIndex < len(self.puzzleWithPiecesPositioned[0]):
                     currentTile = self.puzzleWithPiecesPositioned[rowIndex][columnIndex]
-                    for i in range(1, len(currentTile.pixels[0]) - 1):
-                        currentRow += currentTile.pixels[tileJindex][i]
+                    for i in range(1, len(currentTile.pixelRows[0]) - 1):
+                        currentRow += currentTile.pixelRows[tileJindex][i]
                     columnIndex += 1
                 boardWithTrimmedEdges.append(currentRow)
                 tileJindex += 1
@@ -314,12 +268,12 @@ class Puzzle:
     def countSeaMonstersInBoard(self, seaMonster: SeaMonster):
         seaMonstersCount = 0
 
-        for j in range(1, len(self.allAlignedTilePixelsWithoutBorders.pixels) - 1):
-            for i in range(0, (len(self.allAlignedTilePixelsWithoutBorders.pixels[j]) - seaMonster.length - 1)):
-                if self.allAlignedTilePixelsWithoutBorders.pixels[j][i] == "#":
+        for j in range(1, len(self.allAlignedTilePixelsWithoutBorders.pixelRows) - 1):
+            for i in range(0, (len(self.allAlignedTilePixelsWithoutBorders.pixelRows[j]) - seaMonster.length - 1)):
+                if self.allAlignedTilePixelsWithoutBorders.pixelRows[j][i] == "#":
                     isSeaMonsterPossible = True
                     for seaMonsterCoordinate in seaMonster.coordinates:
-                        if self.allAlignedTilePixelsWithoutBorders.pixels[j + seaMonsterCoordinate.y][i + seaMonsterCoordinate.x] != "#":
+                        if self.allAlignedTilePixelsWithoutBorders.pixelRows[j + seaMonsterCoordinate.y][i + seaMonsterCoordinate.x] != "#":
                             isSeaMonsterPossible = False
                             break
                     if isSeaMonsterPossible:
@@ -329,8 +283,8 @@ class Puzzle:
 
 
     def countWaterRoughness(self, seaMonster):
-        allRaughnessCount = sum(1 for j in range(0, len(self.allAlignedTilePixelsWithoutBorders.pixels)) for i in range(0, len(self.allAlignedTilePixelsWithoutBorders.pixels[j]))
-                if self.allAlignedTilePixelsWithoutBorders.pixels[j][i] == "#")
+        allRaughnessCount = sum(1 for j in range(0, len(self.allAlignedTilePixelsWithoutBorders.pixelRows)) for i in range(0, len(self.allAlignedTilePixelsWithoutBorders.pixelRows[j]))
+                if self.allAlignedTilePixelsWithoutBorders.pixelRows[j][i] == "#")
 
         seaMonstersCount = self.getSeaMonsterCount(seaMonster)
         return allRaughnessCount - (seaMonstersCount * 15)
@@ -356,6 +310,7 @@ def createTile(rawTileData) -> Tile:
 
     tile = Tile(tileID, tiles)
     tile.setEdges()
+
     return tile
 
 def getSeaMonsterInput(fileName) -> List[str]:
