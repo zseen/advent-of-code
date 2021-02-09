@@ -15,18 +15,18 @@ class Coordinate:
 class SeaMonster:
     def __init__(self):
         self.coordinates: List[Coordinate] = []
-        self.length = len(self.coordinates)
+        self.length: int = 0
 
 
+    def setCoordinates(self, rawInput: List[str]) -> None:
+        coordinates = [Coordinate(i, j - 1) for j in range(0, len(rawInput)) for i in range(0, len(rawInput[j])) if rawInput[j][i] == "#"]
+        self.coordinates = coordinates
+        self.setLength()
 
-    def findCoordinates(self, rawInput: List[str]):
-        coordinates = []
+    def setLength(self) -> None:
+        self.length = max(self.coordinates, key=lambda coordinate: coordinate.x).x - min(self.coordinates, key=lambda coordinate: coordinate.x).x
 
-        for j in range(0, len(rawInput)):
-            for i in range(0, len(rawInput[j])):
-                if self.rawInput[j][i] == "#":
-                    coordinates.append(Coordinate(i, j - 1))
-        self.coordinates = sorted(coordinates , key=lambda coordinate: coordinate.x)
+
 
 
 class Tile:
@@ -290,19 +290,19 @@ class Puzzle:
         self.allAlignedTilePixelsWithoutBorders = boardAsTile
 
 
-    def alignBoardToFindSeaMonsters(self, seaMonster):
-        seaMonstersCount = self.checkForSeaMonster(seaMonster)
+    def getSeaMonsterCount(self, seaMonster):
+        seaMonstersCount = self.checkForSeaMonsterInBoard(seaMonster)
         if seaMonstersCount:
             return seaMonstersCount
 
         self.allAlignedTilePixelsWithoutBorders.flipSideways()
-        seaMonstersCount = self.checkForSeaMonster(seaMonster)
+        seaMonstersCount = self.checkForSeaMonsterInBoard(seaMonster)
         if seaMonstersCount:
             return seaMonstersCount
 
         raise ValueError("Not a single sea monster...really?")
 
-    def checkForSeaMonster(self, seaMonster):
+    def checkForSeaMonsterInBoard(self, seaMonster):
         for _ in range(0, 4):
             seaMonsterCount = self.countSeaMonstersInBoard(seaMonster)
             if seaMonsterCount > 0:
@@ -313,10 +313,9 @@ class Puzzle:
 
     def countSeaMonstersInBoard(self, seaMonster: SeaMonster):
         seaMonstersCount = 0
-        seaMonsterLength = len(seaMonster.coordinates)
 
         for j in range(1, len(self.allAlignedTilePixelsWithoutBorders.pixels) - 1):
-            for i in range(0, (len(self.allAlignedTilePixelsWithoutBorders.pixels[j]) - seaMonsterLength)):
+            for i in range(0, (len(self.allAlignedTilePixelsWithoutBorders.pixels[j]) - seaMonster.length - 1)):
                 if self.allAlignedTilePixelsWithoutBorders.pixels[j][i] == "#":
                     isSeaMonsterPossible = True
                     for seaMonsterCoordinate in seaMonster.coordinates:
@@ -333,7 +332,7 @@ class Puzzle:
         allRaughnessCount = sum(1 for j in range(0, len(self.allAlignedTilePixelsWithoutBorders.pixels)) for i in range(0, len(self.allAlignedTilePixelsWithoutBorders.pixels[j]))
                 if self.allAlignedTilePixelsWithoutBorders.pixels[j][i] == "#")
 
-        seaMonstersCount = self.alignBoardToFindSeaMonsters(seaMonster)
+        seaMonstersCount = self.getSeaMonsterCount(seaMonster)
         return allRaughnessCount - (seaMonstersCount * 15)
 
 
@@ -341,16 +340,9 @@ class Puzzle:
 
 
 
-def getInput(fileName: str):
-    tiles: List[Tile] = []
+def getInput(fileName: str) -> List[Tile]:
     with open(fileName, "r") as inputFile:
-        allDataForTiles = inputFile.read()
-        allDataForTilesSplit = allDataForTiles.split("\n\n")
-        for rawTileData in allDataForTilesSplit:
-            tile = createTile(rawTileData)
-            tiles.append(tile)
-
-        return tiles
+        return [createTile(rawTileData) for rawTileData in inputFile.read().split("\n\n")]
 
 
 def createTile(rawTileData) -> Tile:
@@ -366,20 +358,10 @@ def createTile(rawTileData) -> Tile:
     tile.setEdges()
     return tile
 
-def readSeaMonsterInput(fileName) -> List[List[str]]:
-    rawInput = []
+def getSeaMonsterInput(fileName) -> List[str]:
     with open(fileName, "r") as inputFile:
-        lines = inputFile.readlines()
-        for line in lines:
-            emp = []
-            line = line.strip("\n\n")
-            line = line.strip("\n")
+        return inputFile.read().split("\n")
 
-            for char in line:
-                emp.append(char)
-            rawInput.append(emp)
-
-    return rawInput
 
 
 
@@ -387,8 +369,8 @@ tiles = getInput(TEST_INPUT_FILE)
 puzzle = Puzzle(tiles)
 print(puzzle.puzzleTiles() == 20899048083289)
 seaMonster = SeaMonster()
-seaMonsterRawInput = readSeaMonsterInput(SEA_MONSTER_PICTURE_FILE)
-seaMonster.findCoordinates(seaMonsterRawInput)
+seaMonsterRawInput = getSeaMonsterInput(SEA_MONSTER_PICTURE_FILE)
+seaMonster.setCoordinates(seaMonsterRawInput)
 puzzle.cutEdgesOfCompletedPuzzle()
 print(puzzle.countWaterRoughness(seaMonster)) #273
 
@@ -398,7 +380,7 @@ tiles2 = getInput(INPUT_FILE)
 puzzle2 = Puzzle(tiles2)
 print(puzzle2.puzzleTiles() == 28057939502729)
 seaMonster2 = SeaMonster()
-seaMonster2.findCoordinates(seaMonsterRawInput)
+seaMonster2.setCoordinates(seaMonsterRawInput)
 puzzle2.cutEdgesOfCompletedPuzzle()
 print(puzzle2.countWaterRoughness(seaMonster2)) # 2489
 
