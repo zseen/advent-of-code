@@ -9,10 +9,13 @@ class Puzzle:
         self._tiles = _tiles
         self._corners: List[Tile] = []
         self._rowAndColumnSize = int(math.sqrt(len(self._tiles)))
-        self._puzzleWithTilesPositioned = [[0 for _ in range(self._rowAndColumnSize)] for _ in range(self._rowAndColumnSize)]
+        self._board = [[0 for _ in range(self._rowAndColumnSize)] for _ in range(self._rowAndColumnSize)]
 
     def getCornerTilesIdsProduct(self) -> int:
         return math.prod([int(corner.id) for corner in self._corners])
+
+    def getPuzzleBoard(self) -> List[List[Tile]]:
+        return self._board
 
     def putPuzzleTogether(self) -> None:
         self._findCorners()
@@ -23,17 +26,5 @@ class Puzzle:
         self._corners = [tile for tile in self._tiles if len(tile.neighbourTiles) == 2]
 
     def _puzzleTiles(self) -> None:
-        PH.fillUpPuzzleFirstRow(self._corners, self._puzzleWithTilesPositioned)
-        PH.fillUpPuzzleBody(self._puzzleWithTilesPositioned)
-
-
-
-
-
-
-
-
-
-
-
-
+        PH.fillUpPuzzleFirstRow(self._corners, self._board)
+        PH.fillUpPuzzleBody(self._board)

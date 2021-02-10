@@ -18,24 +18,27 @@ def findNeighboursForTiles(tiles) -> None:
                 neighbourTilesPairs.add((tile1, tile2))
                 neighbourTilesPairs.add((tile2, tile1))
 
+
 def areTilesNeighbours(tile1: Tile, tile2: Tile) -> bool:
     for edge in tile1.edges:
         if edge in tile2.edges or edge[::-1] in tile2.edges:
             return True
     return False
 
-def fillUpPuzzleFirstRow(corners: List[Tile], puzzleWithTilesPositioned: List[List[Tile]]) -> None:
+
+def fillUpPuzzleFirstRow(corners: List[Tile], puzzleBoard: List[List[Tile]]) -> None:
     topLeftCorner = findTopLeftCorner(corners)
-    puzzleWithTilesPositioned[0][0] = topLeftCorner
+    puzzleBoard[0][0] = topLeftCorner
 
     currentTile = topLeftCorner
-    for columnIndex in range(1, len(puzzleWithTilesPositioned[0])):
+    for columnIndex in range(1, len(puzzleBoard[0])):
         for neigbour in currentTile.neighbourTiles:
             if isHorizontalAlignmentPossible(neigbour, currentTile):
-                puzzleWithTilesPositioned[0][columnIndex] = neigbour
+                puzzleBoard[0][columnIndex] = neigbour
                 currentTile = neigbour
 
-def findTopLeftCorner(corners: List[Tile]):
+
+def findTopLeftCorner(corners: List[Tile]) -> Tile:
     rightNeighbourFound = False
     bottomNeighbourFound = False
 
@@ -60,13 +63,14 @@ def findTopLeftCorner(corners: List[Tile]):
     raise ValueError("Top left corner not found")
 
 
-def fillUpPuzzleBody(puzzleWithTilesPositioned: List[List[Tile]]) -> None:
-    for j in range(1, len(puzzleWithTilesPositioned)):
-        for i in range(0, len(puzzleWithTilesPositioned[0])):
-            currentTile = puzzleWithTilesPositioned[j - 1][i]
+def fillUpPuzzleBody(puzzleBoard: List[List[Tile]]) -> None:
+    for j in range(1, len(puzzleBoard)):
+        for i in range(0, len(puzzleBoard[0])):
+            currentTile = puzzleBoard[j - 1][i]
             for neigbour in currentTile.neighbourTiles:
                 if isVerticalAlignmentPossible(neigbour, currentTile):
-                    puzzleWithTilesPositioned[j][i] = neigbour
+                    puzzleBoard[j][i] = neigbour
+
 
 def isHorizontalAlignmentPossible(neighbour: Tile, correctlyAlignedTile: Tile) -> bool:
     for _ in range(0, 4):
@@ -81,7 +85,6 @@ def isHorizontalAlignmentPossible(neighbour: Tile, correctlyAlignedTile: Tile) -
         neighbour.rotateRight()
 
     neighbour.flipSideways()
-
     return False
 
 
@@ -99,3 +102,27 @@ def isVerticalAlignmentPossible(neighbour: Tile, correctlyAlignedTile: Tile):
 
     neighbour.flipSideways()
     return False
+
+
+def removeTileEdgesFromCompletedPuzzle(puzzleBoard):
+    boardWithTrimmedEdgedTiles = []
+
+    rowIndex, columnIndex = 0, 0
+    maxRowIndex, maxColumnIndex = len(puzzleBoard), len(puzzleBoard)
+
+    tileRowIndex = 1
+    while rowIndex < maxRowIndex and columnIndex < maxColumnIndex:
+        while tileRowIndex < len(puzzleBoard[0][0].pixelRows) - 1:
+            currentRow = ""
+            while columnIndex < len(puzzleBoard[0]):
+                currentTile = puzzleBoard[rowIndex][columnIndex]
+                for tileColumnIndex in range(1, len(currentTile.pixelRows[0]) - 1):
+                    currentRow += currentTile.pixelRows[tileRowIndex][tileColumnIndex]
+                columnIndex += 1
+            boardWithTrimmedEdgedTiles.append(currentRow)
+            tileRowIndex += 1
+            columnIndex = 0
+        rowIndex += 1
+        tileRowIndex = 1
+
+    return boardWithTrimmedEdgedTiles

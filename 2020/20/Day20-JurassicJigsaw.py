@@ -1,80 +1,23 @@
-import numpy as np
-import math
-from copy import deepcopy
-from typing import List, Dict, Set
+import unittest
+from typing import List
 
 from Tile import Tile
 from Puzzle import Puzzle
+import PuzzleHelper as PH
 from SeaMonster import SeaMonster
+from Sea import Sea
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
-SEA_MONSTER_PICTURE_FILE = "seaMonster.txt"
+SEA_MONSTER_PIXELS_FILE = "seaMonster.txt"
 
 
-
-
-class Sea(Tile):
-    def __init__(self, pixelRows, seaMonster: SeaMonster):
-        self.pixelRows = pixelRows
-        self.seaMonster = seaMonster
-
-    def calculateWaterRoughness(self):
-        allRaughnessCount = sum(1 for j in range(0, len(self.pixelRows)) for i in range(0, len(self.pixelRows[j]))
-                if self.pixelRows[j][i] == "#")
-
-        return allRaughnessCount - (self._getSeaMonsterCount() * seaMonster.bodyPartsCount)
-
-    def _getSeaMonsterCount(self):
-        seaMonstersCount = self._checkForSeaMonsterInBoard()
-        if seaMonstersCount:
-            return seaMonstersCount
-
-        self.flipSideways()
-        seaMonstersCount = self._checkForSeaMonsterInBoard()
-        if seaMonstersCount:
-            return seaMonstersCount
-
-        raise ValueError("Not a single sea monster...really?")
-
-    def _checkForSeaMonsterInBoard(self) -> int:
-        for _ in range(0, 4):
-            seaMonsterCount = self._countSeaMonstersInCurrentSeaAlignment()
-            if seaMonsterCount > 0:
-                return seaMonsterCount
-            self.rotateRight()
-
-
-    def _countSeaMonstersInCurrentSeaAlignment(self):
-        seaMonstersCount = 0
-
-        for j in range(1, len(self.pixelRows) - 1):
-            for i in range(0, (len(self.pixelRows[j]) - self.seaMonster.length - 1)):
-                if self.pixelRows[j][i] == "#":
-                    isSeaMonsterPossible = True
-                    for seaMonsterCoordinate in self.seaMonster.coordinates:
-                        if self.pixelRows[j + seaMonsterCoordinate.y][i + seaMonsterCoordinate.x] != "#":
-                            isSeaMonsterPossible = False
-                            break
-                    if isSeaMonsterPossible:
-                        seaMonstersCount += 1
-
-        return seaMonstersCount
-
-
-
-
-
-
-
-
-
-def getInput(fileName: str) -> List[Tile]:
+def getTiles(fileName: str) -> List[Tile]:
     with open(fileName, "r") as inputFile:
         return [createTile(rawTileData) for rawTileData in inputFile.read().split("\n\n")]
 
 
-def createTile(rawTileData) -> Tile:
+def createTile(rawTileData):
     rawTileDataSplit = rawTileData.split()
 
     if not rawTileDataSplit[1] or not rawTileDataSplit[1][: - 1].isnumeric():
@@ -88,71 +31,53 @@ def createTile(rawTileData) -> Tile:
 
     return tile
 
-def getSeaMonsterInput(fileName) -> List[str]:
+
+def createSeaMonster(fileName: str) -> SeaMonster:
+    seaMonsterRawInput = getSeaMonsterInput(fileName)
+    seaMonster = SeaMonster()
+    seaMonster.setCoordinates(seaMonsterRawInput)
+    return seaMonster
+
+
+def getSeaMonsterInput(fileName: str) -> List[str]:
     with open(fileName, "r") as inputFile:
         return inputFile.read().split("\n")
 
 
-def cutEdgesOfCompletedPuzzle(puzzleWithTilesPositioned):
-    boardWithTrimmedEdges = []
+def main():
+    tiles = getTiles(INPUT_FILE)
+    puzzle = Puzzle(tiles)
+    puzzle.putPuzzleTogether()
+    print(puzzle.getCornerTilesIdsProduct())  # 28057939502729
 
-    rowIndex, columnIndex = 0, 0
-    maxRowIndex, maxColumnIndex = len(puzzleWithTilesPositioned), len(puzzleWithTilesPositioned)
+    boardWithTileEdgesRemoved = PH.removeTileEdgesFromCompletedPuzzle(puzzle.getPuzzleBoard())
+    seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
+    sea = Sea(boardWithTileEdgesRemoved, seaMonster)
 
-
-    tileRowIndex = 1
-    while rowIndex < maxRowIndex and columnIndex < maxColumnIndex:
-        while tileRowIndex < len(puzzleWithTilesPositioned[0][0].pixelRows) - 1:
-            currentRow = ""
-            while columnIndex < len(puzzleWithTilesPositioned[0]):
-                currentTile = puzzleWithTilesPositioned[rowIndex][columnIndex]
-                for tileColumnIndex in range(1, len(currentTile.pixelRows[0]) - 1):
-                    currentRow += currentTile.pixelRows[tileRowIndex][tileColumnIndex]
-                columnIndex += 1
-            boardWithTrimmedEdges.append(currentRow)
-            tileRowIndex += 1
-            columnIndex = 0
-        rowIndex+= 1
-        tileRowIndex = 1
-
-    return boardWithTrimmedEdges
+    print(sea.calculateWaterRoughness())  # 2489
 
 
+class PuzzleAndSeaTester(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(PuzzleAndSeaTester, self).__init__(*args, **kwargs)
+        self.puzzle = self.getCompletedPuzzle()
+
+    def getCompletedPuzzle(self) -> Puzzle:
+        tiles = getTiles(TEST_INPUT_FILE)
+        puzzle = Puzzle(tiles)
+        puzzle.putPuzzleTogether()
+        return puzzle
+
+    def test_getCornerTilesIdsProduct_correctProductReturned(self):
+        self.assertEqual(20899048083289, self.puzzle.getCornerTilesIdsProduct())
+
+    def test_calculateWaterRoughness_seaMonstersPresent_correctRoughnessReturned(self):
+        boardWithTileEdgesRemoved = PH.removeTileEdgesFromCompletedPuzzle(self.puzzle.getPuzzleBoard())
+        seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
+        sea = Sea(boardWithTileEdgesRemoved, seaMonster)
+        self.assertEqual(273, sea.calculateWaterRoughness())
 
 
-
-tiles = getInput(TEST_INPUT_FILE)
-puzzle = Puzzle(tiles)
-puzzle.putPuzzleTogether()
-print(puzzle.getCornerTilesIdsProduct() == 20899048083289)
-
-trimmedBoard = cutEdgesOfCompletedPuzzle(puzzle._puzzleWithTilesPositioned)
-
-
-seaMonster = SeaMonster()
-seaMonsterRawInput = getSeaMonsterInput(SEA_MONSTER_PICTURE_FILE)
-seaMonster.setCoordinates(seaMonsterRawInput)
-
-sea = Sea(trimmedBoard, seaMonster)
-
-print(sea.calculateWaterRoughness()) #273
-
-
-#28057939502729
-tiles2 = getInput(INPUT_FILE)
-puzzle2 = Puzzle(tiles2)
-puzzle2.putPuzzleTogether()
-print(puzzle2.getCornerTilesIdsProduct() == 28057939502729)
-
-trimmedBoard2 = cutEdgesOfCompletedPuzzle(puzzle2._puzzleWithTilesPositioned)
-
-
-seaMonster2 = SeaMonster()
-seaMonster2.setCoordinates(seaMonsterRawInput)
-sea2 = Sea(trimmedBoard2, seaMonster)
-
-
-print(sea2.calculateWaterRoughness()) # 2489
-
-
-
+if __name__ == '__main__':
+    # main()
+    unittest.main()
