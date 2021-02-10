@@ -50,7 +50,9 @@ def main():
     puzzle.putPuzzleTogether()
     print(puzzle.getCornerTilesIdsProduct())  # 28057939502729
 
-    boardWithTileEdgesRemoved = PH.removeTileEdgesFromCompletedPuzzle(puzzle.getPuzzleBoard())
+    edgeRemover = PH.TileEdgesRemover()
+    boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesFromCompletedPuzzle(puzzle.getPuzzleBoard())
+
     seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
     sea = Sea(boardWithTileEdgesRemoved, seaMonster)
 
@@ -72,12 +74,13 @@ class PuzzleAndSeaTester(unittest.TestCase):
         self.assertEqual(20899048083289, self.puzzle.getCornerTilesIdsProduct())
 
     def test_calculateWaterRoughness_seaMonstersPresent_correctRoughnessReturned(self):
-        boardWithTileEdgesRemoved = PH.removeTileEdgesFromCompletedPuzzle(self.puzzle.getPuzzleBoard())
+        edgeRemover = PH.TileEdgesRemover()
+        boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesFromCompletedPuzzle(self.puzzle.getPuzzleBoard())
         seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
         sea = Sea(boardWithTileEdgesRemoved, seaMonster)
         self.assertEqual(273, sea.calculateWaterRoughness())
 
 
 if __name__ == '__main__':
-    # main()
+    main()
     unittest.main()

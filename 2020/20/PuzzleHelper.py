@@ -104,25 +104,36 @@ def isVerticalAlignmentPossible(neighbour: Tile, correctlyAlignedTile: Tile):
     return False
 
 
-def removeTileEdgesFromCompletedPuzzle(puzzleBoard):
-    boardWithTrimmedEdgedTiles = []
 
-    rowIndex, columnIndex = 0, 0
-    maxRowIndex, maxColumnIndex = len(puzzleBoard), len(puzzleBoard)
+class TileEdgesRemover:
+    def __init__(self):
+        self.rowIndex = 0
+        self.columnIndex = 0
+        self.tileRowIndex = 1
+        self.tileColumnIndex = 1
 
-    tileRowIndex = 1
-    while rowIndex < maxRowIndex and columnIndex < maxColumnIndex:
-        while tileRowIndex < len(puzzleBoard[0][0].pixelRows) - 1:
-            currentRow = ""
-            while columnIndex < len(puzzleBoard[0]):
-                currentTile = puzzleBoard[rowIndex][columnIndex]
-                for tileColumnIndex in range(1, len(currentTile.pixelRows[0]) - 1):
-                    currentRow += currentTile.pixelRows[tileRowIndex][tileColumnIndex]
-                columnIndex += 1
-            boardWithTrimmedEdgedTiles.append(currentRow)
-            tileRowIndex += 1
-            columnIndex = 0
-        rowIndex += 1
-        tileRowIndex = 1
+    def removeTileEdgesFromCompletedPuzzle(self, puzzleBoard: List[List[Tile]]) -> List[str]:
+        boardWithTrimmedEdgedTiles = []
+        maxRowIndex, maxColumnIndex = len(puzzleBoard), len(puzzleBoard)
 
-    return boardWithTrimmedEdgedTiles
+        while self.rowIndex < maxRowIndex and self.columnIndex < maxColumnIndex:
+            while self.tileRowIndex < len(puzzleBoard[0][0].pixelRows) - 1:
+                currentRow = self._collectPixelsFromAllTilesInRow(puzzleBoard)
+                boardWithTrimmedEdgedTiles.append(currentRow)
+                self.tileRowIndex += 1
+                self.columnIndex = 0
+            self.rowIndex += 1
+            self.tileRowIndex = 1
+
+        return boardWithTrimmedEdgedTiles
+
+    def _collectPixelsFromAllTilesInRow(self, puzzleBoard: List[List[Tile]]) -> str:
+        currentRow = ""
+        while self.columnIndex < len(puzzleBoard[0]):
+            currentTile = puzzleBoard[self.rowIndex][self.columnIndex]
+            while self.tileColumnIndex < len(currentTile.pixelRows[0]) - 1:
+                currentRow += currentTile.pixelRows[self.tileRowIndex][self.tileColumnIndex]
+                self.tileColumnIndex += 1
+            self.tileColumnIndex = 1
+            self.columnIndex += 1
+        return currentRow
