@@ -22,7 +22,7 @@ class Tile:
 
     def setEdges(self) -> None:
         if not self.pixelRows:
-            raise ValueError("Problem with setting edges")
+            raise ValueError("Problem with setting edges, no pixelRows found in tile.")
 
         self.topEdge = self.pixelRows[0]
         self.bottomEdge = self.pixelRows[-1]

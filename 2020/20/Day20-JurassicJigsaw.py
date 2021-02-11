@@ -17,10 +17,13 @@ def getTiles(fileName: str) -> List[Tile]:
         return [createTile(rawTileData) for rawTileData in inputFile.read().split("\n\n")]
 
 
-def createTile(rawTileData):
+def createTile(rawTileData: str) -> Tile:
+    if not rawTileData:
+        raise ValueError("Invalid data received for creating a tile.")
+
     rawTileDataSplit = rawTileData.split()
 
-    if not rawTileDataSplit[1] or not rawTileDataSplit[1][: - 1].isnumeric():
+    if not rawTileDataSplit[1] or not rawTileDataSplit[1][: - 1].isnumeric() or len(rawTileDataSplit) < 3:
         raise ValueError("Problem with data format after splitting in createTile()")
 
     tileID = rawTileDataSplit[1][:- 1]
@@ -82,5 +85,5 @@ class PuzzleAndSeaTester(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    main()
+    # main()
     unittest.main()

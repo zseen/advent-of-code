@@ -3,6 +3,8 @@ from typing import List
 from Tile import Tile
 import PuzzleHelper as PH
 
+boardType = List[List[Tile]]
+
 
 class Puzzle:
     def __init__(self, _tiles: List[Tile]):
@@ -12,12 +14,21 @@ class Puzzle:
         self._board = [[0 for _ in range(self._rowAndColumnSize)] for _ in range(self._rowAndColumnSize)]
 
     def getCornerTilesIdsProduct(self) -> int:
+        if not self._corners:
+            raise ValueError("Corner tiles not determined.")
+
         return math.prod([int(corner.id) for corner in self._corners])
 
-    def getPuzzleBoard(self) -> List[List[Tile]]:
+    def getPuzzleBoard(self) -> boardType:
+        if not self._board:
+            raise ValueError("Board not found, maybe the tiles are missing.")
+
         return self._board
 
     def putPuzzleTogether(self) -> None:
+        if not self._tiles:
+            raise ValueError("No tiles to build the puzzle from.")
+
         self._findCorners()
         self._puzzleTiles()
 
