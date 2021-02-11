@@ -76,18 +76,17 @@ class ValidMessagesCounterForLoopedRules(ValidMessagesCounter):
         if not 8 in self._ruleNumToDecipheredValue or not 11 in self._ruleNumToDecipheredValue or not 0 in self._ruleNumToDecipheredValue:
             raise ValueError("8, 11, or 0 not in ruleNumToDecipheredValue.")
 
-        self._ruleNumToDecipheredValue[8] = "{}{}{}{}".format("(", self._ruleNumToDecipheredValue[42], "+", ")")
-        self._ruleNumToDecipheredValue[11] = "{}{}{}".format("(", self._getRegexBodyForEleven(), ")")
+        self._ruleNumToDecipheredValue[8] = f"({self._ruleNumToDecipheredValue[42]}+)"
+        self._ruleNumToDecipheredValue[11] = f"({self._getRegexBodyForEleven()})"
         self._ruleNumToDecipheredValue[0] = self._ruleNumToDecipheredValue[8] + self._ruleNumToDecipheredValue[11]
 
     def _getRegexBodyForEleven(self) -> str:
         if not 42 in self._ruleNumToDecipheredValue or not 31 in self._ruleNumToDecipheredValue:
             raise ValueError("42 or 31 not in ruleNumToDecipheredValue.")
 
-        regexBodyForElevenParts = [
-            "{}{}{}{}{}{}{}{}".format(self._ruleNumToDecipheredValue[42], "{", str(i), "}", self._ruleNumToDecipheredValue[31], "{", str(i), "}") for
-            i in range(1, 5)]
-        
+        regexBodyForElevenParts = [f"({self._ruleNumToDecipheredValue[42]}{{{str(i)}}}{self._ruleNumToDecipheredValue[31]}{{{str(i)}}})" for i in
+                                   range(1, 5)]
+
         return "|".join(regexBodyForElevenParts)
 
 
