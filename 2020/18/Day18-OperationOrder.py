@@ -29,12 +29,12 @@ class Calculator:
         return self.evaluateWithoutParentheses()
 
     def _extractInnermostParenthesis(self, startingIndex: int) -> None:
-        openingParenthesisIndex, closingParenthesisIndex = self._findInnermostOpeningParenthesisIndex(startingIndex)
+        openingParenthesisIndex, closingParenthesisIndex = self._findFirstClosedParenthesisIndices(startingIndex)
         evaluatedSubExpression = str(self.evaluateWithoutParentheses(openingParenthesisIndex + 1,
                                                                      closingParenthesisIndex))
-        Calculator._replaceThreeTokensWithOne(self._expression, openingParenthesisIndex, closingParenthesisIndex, evaluatedSubExpression)
+        Calculator._replaceNTokensWithOne(self._expression, openingParenthesisIndex, closingParenthesisIndex, evaluatedSubExpression)
 
-    def _findInnermostOpeningParenthesisIndex(self, startingIndex: int) -> Tuple[int, int]:
+    def _findFirstClosedParenthesisIndices(self, startingIndex: int) -> Tuple[int, int]:
         if startingIndex > len(self._expression):
             raise ValueError("Starting index larger than expression length.")
 
@@ -95,10 +95,10 @@ class Calculator:
     @staticmethod
     def _evaluateSingleExpression(expression: List[str], index: int, func: callable):
         result = func(expression[index - 1], expression[index + 1])
-        Calculator._replaceThreeTokensWithOne(expression, index - 1, index + 1, str(result))
+        Calculator._replaceNTokensWithOne(expression, index - 1, index + 1, str(result))
 
     @staticmethod
-    def _replaceThreeTokensWithOne(expression: List[str], startIndex: int, endIndex: int, toReplaceWith: str) -> None:
+    def _replaceNTokensWithOne(expression: List[str], startIndex: int, endIndex: int, toReplaceWith: str) -> None:
         if not expression or startIndex > len(expression) or endIndex > len(expression):
             raise ValueError("Cannot replace token, as expression is not long enough.")
 
@@ -116,12 +116,7 @@ def getExpressions(inputFileName: str) -> List[str]:
 
 
 def sumAllExpressions(allExpressions: List[str], operationOrderPreference: OperationOrder) -> int:
-    allExpressionsSum = 0
-    for expression in allExpressions:
-        calculator = Calculator(expression, operationOrderPreference)
-        allExpressionsSum += calculator.evaluate()
-
-    return allExpressionsSum
+    return sum(Calculator(expression, operationOrderPreference).evaluate() for expression in allExpressions)
 
 
 def main():
