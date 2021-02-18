@@ -6,13 +6,16 @@ from Puzzle import Puzzle
 import PuzzleHelper as PH
 from SeaMonster import SeaMonster
 from Sea import Sea
+from Coordinates import Coordinates
+from TileEdgesRemover import TileEdgesRemover
+
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
-SEA_MONSTER_PIXELS_FILE = "seaMonster.txt"
+SEA_MONSTER_PIXELS_FILE = "sea_monster.txt"
 
 
-def getTiles(fileName: str) -> List[Tile]:
+def createTiles(fileName: str) -> List[Tile]:
     with open(fileName, "r") as inputFile:
         return [createTile(rawTileData) for rawTileData in inputFile.read().split("\n\n")]
 
@@ -21,13 +24,17 @@ def createTile(rawTileData: str) -> Tile:
     if not rawTileData:
         raise ValueError("Invalid data received for creating a tile.")
 
-    rawTileDataSplit = rawTileData.split()
+    rawTileDataSplit = rawTileData.split("\n")
 
-    if not rawTileDataSplit[1] or not rawTileDataSplit[1][: - 1].isnumeric() or len(rawTileDataSplit) < 3:
+    if not rawTileDataSplit[1] or len(rawTileDataSplit) < 2:
         raise ValueError("Problem with data format after splitting in createTile()")
 
-    tileID = rawTileDataSplit[1][:- 1]
-    tiles = list(rawTileDataSplit[2:])
+    rawTileDataSplitForId = rawTileDataSplit[0].strip(":").split(" ")
+    if len(rawTileDataSplitForId) < 2 or not rawTileDataSplitForId[1].isnumeric():
+        raise ValueError("Tile ID not extracted properly.")
+
+    tileID = rawTileDataSplitForId[1]
+    tiles = list(rawTileDataSplit[1:])
 
     tile = Tile(tileID, tiles)
     tile.setEdges()
@@ -38,7 +45,8 @@ def createTile(rawTileData: str) -> Tile:
 def createSeaMonster(fileName: str) -> SeaMonster:
     seaMonsterRawInput = getSeaMonsterInput(fileName)
     seaMonster = SeaMonster()
-    seaMonster.setCoordinates(seaMonsterRawInput)
+    coordinates = [Coordinates(i, j - 1) for j in range(0, len(seaMonsterRawInput)) for i in range(0, len(seaMonsterRawInput[j])) if seaMonsterRawInput[j][i] == "#"]
+    seaMonster.setCoordinates(coordinates)
     return seaMonster
 
 
@@ -48,9 +56,9 @@ def getSeaMonsterInput(fileName: str) -> List[str]:
 
 
 def main():
-    tiles = getTiles(INPUT_FILE)
+    tiles = createTiles(INPUT_FILE)
     puzzle = Puzzle(tiles)
-    puzzle.putPuzzleTogether()
+    puzzle.assemble()
     print(puzzle.getCornerTilesIdsProduct())  # 28057939502729
 
     edgeRemover = PH.TileEdgesRemover()
@@ -63,25 +71,29 @@ def main():
 
 
 class PuzzleAndSeaTester(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super(PuzzleAndSeaTester, self).__init__(*args, **kwargs)
-        self.puzzle = self.getCompletedPuzzle()
+    def setUp(self) -> None:
+        self.tiles = createTiles(TEST_INPUT_FILE)
+        self.puzzle = Puzzle(self.tiles)
 
-    def getCompletedPuzzle(self) -> Puzzle:
-        tiles = getTiles(TEST_INPUT_FILE)
-        puzzle = Puzzle(tiles)
-        puzzle.putPuzzleTogether()
-        return puzzle
+    def setUpSea(self) -> Sea:
+        edgeRemover = TileEdgesRemover()
+        puzzleBoard = self.puzzle.getPuzzleBoard()
+        boardWithTilePixelsFusedTogether = edgeRemover.createBoardWithTilePixelsFusedTogetherInRows(puzzleBoard)
+        boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesPixelsFromBoard(boardWithTilePixelsFusedTogether)
+        seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
+        return Sea(boardWithTileEdgesRemoved, seaMonster)
 
     def test_getCornerTilesIdsProduct_correctProductReturned(self):
+        self.puzzle.assemble()
         self.assertEqual(20899048083289, self.puzzle.getCornerTilesIdsProduct())
 
     def test_calculateWaterRoughness_seaMonstersPresent_correctRoughnessReturned(self):
-        edgeRemover = PH.TileEdgesRemover()
-        boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesFromCompletedPuzzle(self.puzzle.getPuzzleBoard())
-        seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
-        sea = Sea(boardWithTileEdgesRemoved, seaMonster)
+        self.puzzle.assemble()
+        sea = self.setUpSea()
         self.assertEqual(273, sea.calculateWaterRoughness())
+
+
+
 
 
 if __name__ == '__main__':
