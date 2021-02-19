@@ -1,6 +1,5 @@
 import unittest
 from typing import List
-
 from Tile import Tile
 from Puzzle import Puzzle
 import PuzzleHelper as PH
@@ -59,10 +58,12 @@ def main():
     tiles = createTiles(INPUT_FILE)
     puzzle = Puzzle(tiles)
     puzzle.assemble()
-    print(puzzle.getCornerTilesIdsProduct())  # 28057939502729
+    print(puzzle.getCornerTilesIdProduct())  # 28057939502729
 
-    edgeRemover = PH.TileEdgesRemover()
-    boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesFromCompletedPuzzle(puzzle.getPuzzleBoard())
+    edgeRemover = TileEdgesRemover()
+    puzzleBoard = puzzle.getPuzzleBoard()
+    boardWithTilePixelsFusedTogether = edgeRemover.createBoardWithTilePixelsFusedTogetherInRows(puzzleBoard)
+    boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesPixelsFromBoard(boardWithTilePixelsFusedTogether)
 
     seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
     sea = Sea(boardWithTileEdgesRemoved, seaMonster)
@@ -85,7 +86,7 @@ class PuzzleAndSeaTester(unittest.TestCase):
 
     def test_getCornerTilesIdsProduct_correctProductReturned(self):
         self.puzzle.assemble()
-        self.assertEqual(20899048083289, self.puzzle.getCornerTilesIdsProduct())
+        self.assertEqual(20899048083289, self.puzzle.getCornerTilesIdProduct())
 
     def test_calculateWaterRoughness_seaMonstersPresent_correctRoughnessReturned(self):
         self.puzzle.assemble()

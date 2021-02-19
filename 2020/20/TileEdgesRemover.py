@@ -5,12 +5,12 @@ from Tile import Tile
 
 class TileEdgesRemover:
     def __init__(self):
-        self.rowIndex = 0
-        self.columnIndex = 0
-        self.tileRowIndex = 0
-        self.tileColumnIndex = 0
-        self.tileSideEdgeLength = 0
-        self.tilePixelRowLength = 0
+        self._rowIndex = 0
+        self._columnIndex = 0
+        self._tileRowIndex = 0
+        self._tileColumnIndex = 0
+        self._tileSideEdgeLength = 0
+        self._tilePixelRowLength = 0
 
     def removeTileEdgesPixelsFromBoard(self, boardWithTilePixels: List[str]) -> List[str]:
         if not boardWithTilePixels:
@@ -23,52 +23,52 @@ class TileEdgesRemover:
         if not puzzleBoard:
             raise ValueError("Puzze board missing - cannot remove tile edges.")
 
-        self._calculateTileEsgesLength(puzzleBoard)
+        self._calculateTileEdgesLength(puzzleBoard)
 
         boardWithTrimmedEdgedTiles = []
-        while self.rowIndex < len(puzzleBoard) and self.columnIndex < len(puzzleBoard):
-            while self.tileRowIndex < self.tileSideEdgeLength:
+        while self._rowIndex < len(puzzleBoard) and self._columnIndex < len(puzzleBoard):
+            while self._tileRowIndex < self._tileSideEdgeLength:
                 self._addPixelRowsToBoard(boardWithTrimmedEdgedTiles, puzzleBoard)
-            self.rowIndex += 1
-            self.tileRowIndex = 0
+            self._rowIndex += 1
+            self._tileRowIndex = 0
 
         return boardWithTrimmedEdgedTiles
 
-    def _calculateTileEsgesLength(self, puzzleBoard: BoardType) -> None:
+    def _calculateTileEdgesLength(self, puzzleBoard: BoardType) -> None:
         if not isinstance(puzzleBoard[0][0], Tile):
             raise ValueError("Top left corner of puzzle board is not a tile")
 
-        self.tileSideEdgeLength = len(puzzleBoard[0][0].rightEdge)
-        self.tilePixelRowLength = len(puzzleBoard[0][0].topEdge)
+        self._tileSideEdgeLength = len(puzzleBoard[0][0].rightEdge)
+        self._tilePixelRowLength = len(puzzleBoard[0][0].topEdge)
 
     def _addPixelRowsToBoard(self, boardWithTrimmedEdgedTiles: List[str], puzzleBoard: BoardType) -> None:
         pixelsIncurrentRow = self._collectPixelsFromAllTilesInRow(puzzleBoard)
         boardWithTrimmedEdgedTiles.append(pixelsIncurrentRow)
-        self.tileRowIndex += 1
-        self.columnIndex = 0
+        self._tileRowIndex += 1
+        self._columnIndex = 0
 
     def _collectPixelsFromAllTilesInRow(self, puzzleBoard: BoardType) -> str:
         currentRow = ""
 
-        while self.columnIndex < len(puzzleBoard[0]):
-            currentTile = puzzleBoard[self.rowIndex][self.columnIndex]
-            while self.tileColumnIndex < len(currentTile.pixelRows[0]):
-                currentRow += currentTile.pixelRows[self.tileRowIndex][self.tileColumnIndex]
-                self.tileColumnIndex += 1
-            self.tileColumnIndex = 0
-            self.columnIndex += 1
+        while self._columnIndex < len(puzzleBoard[0]):
+            currentTile = puzzleBoard[self._rowIndex][self._columnIndex]
+            while self._tileColumnIndex < self._tilePixelRowLength:
+                currentRow += currentTile.getPixelAtPosition(self._tileRowIndex, self._tileColumnIndex)
+                self._tileColumnIndex += 1
+            self._tileColumnIndex = 0
+            self._columnIndex += 1
 
         return currentRow
 
     def _removeTileTopAndBottomEdgesPixelRowsFromBoard(self, boardWithPixelRows: List[str]) -> List[str]:
         boardWithTopBottomTileEdgesPixelsRemoved = []
 
-        if self.tileSideEdgeLength == 0:
+        if self._tileSideEdgeLength == 0:
             raise ValueError("Tile side edge is missing or miscalculated.")
 
-        for rowIndex in range(0, len(boardWithPixelRows)):
-            if rowIndex % self.tileSideEdgeLength != 0 and rowIndex % self.tileSideEdgeLength != self.tileSideEdgeLength - 1:
-                boardWithTopBottomTileEdgesPixelsRemoved.append(boardWithPixelRows[rowIndex])
+        for _rowIndex in range(0, len(boardWithPixelRows)):
+            if _rowIndex % self._tileSideEdgeLength != 0 and _rowIndex % self._tileSideEdgeLength != self._tileSideEdgeLength - 1:
+                boardWithTopBottomTileEdgesPixelsRemoved.append(boardWithPixelRows[_rowIndex])
         return boardWithTopBottomTileEdgesPixelsRemoved
 
     def _removeTileSideEdgesPixelsFromBoard(self, boardWithPixelRows: List[str]) -> List[str]:
@@ -76,7 +76,7 @@ class TileEdgesRemover:
 
         for pixelRow in boardWithPixelRows:
             tilePixelsWithoutSideEdgesInRowCombined = ""
-            for pixelIndex in range(0, len(pixelRow), self.tilePixelRowLength):
-                tilePixelsWithoutSideEdgesInRowCombined += pixelRow[pixelIndex + 1: pixelIndex + self.tilePixelRowLength - 1]
+            for pixelIndex in range(0, len(pixelRow), self._tilePixelRowLength):
+                tilePixelsWithoutSideEdgesInRowCombined += pixelRow[pixelIndex + 1: pixelIndex + self._tilePixelRowLength - 1]
             tilesPixelsWithSideEdgesCutOff.append(tilePixelsWithoutSideEdgesInRowCombined)
         return tilesPixelsWithSideEdgesCutOff

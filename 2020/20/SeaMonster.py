@@ -3,20 +3,28 @@ from Coordinates import Coordinates
 
 class SeaMonster:
     def __init__(self):
-        self.coordinates: List[Coordinates] = []
-        self.length: int = 0
-        self.bodyPartsCount = 0
+        self._coordinates: List[Coordinates] = []
 
     def setCoordinates(self, coordinates: List[Coordinates]) -> None:
         if not coordinates:
             raise ValueError("Coordinates missing when setting coordinates for sea monster.")
 
-        self.coordinates = coordinates
-        self.bodyPartsCount = len(self.coordinates)
-        self._setLength()
+        self._coordinates = coordinates
 
-    def _setLength(self) -> None:
-        if not self.coordinates:
+
+    def getCoordinates(self):
+        if not self._coordinates:
+            raise ValueError("Coordinates not set for sea monster.")
+
+        return self._coordinates
+        
+
+    def getBodyPartsCount(self) -> int:
+        return len(self._coordinates)
+
+    def getLength(self) -> int:
+        if not self._coordinates:
             raise ValueError("Coordinates for the sea monster not found.")
 
-        self.length = max(self.coordinates, key=lambda coordinate: coordinate.x).x - min(self.coordinates, key=lambda coordinate: coordinate.x).x
+        return max(self._coordinates, key=lambda coordinate: coordinate.x).x - min(self._coordinates, key=lambda coordinate: coordinate.x).x
+        
