@@ -41,7 +41,5 @@ class Tile:
         return self._pixelRows[tileRowIdex][tileColumnIndex]
 
     def _buildEdge(self, pixelPosition: int) -> str:
-        try:
-            return "".join([row[pixelPosition] for row in self._pixelRows])
-        except Exception:
-            print(self.id)
+        return "".join([row[pixelPosition] for row in self._pixelRows])
+
