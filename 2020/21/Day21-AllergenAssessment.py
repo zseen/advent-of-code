@@ -9,109 +9,68 @@ TEST_INPUT_FILE = "test_input.txt"
 def getInput(inputFile: str):
     foods = []
 
-    allAllergens = set()
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
         for line in lines:
             line = line.strip("\n")
-            #chunks = line.split("(")
-            #print(chunks)
-            #ingredients = chunks[0].strip(" ").split(" ")
-            #print(ingredients)
-            foods.append(line)
-
-            #allergens = [allergen.strip(",") for allergen in chunks[1].strip(")").split(" ")[1:]]
-            #allAllergens.update(set([allergen for allergen in allergens]))
-
-    return foods
-
-def findPotentialIngredientsToAllergens(foods: List[str]):
-    allergenToPotentialIngredients = dict()
-    for food in foods:
-        chunks = food.split("(")
-        ingredients = chunks[0].strip(" ").split(" ")
-        allergens = [allergen.strip(",") for allergen in chunks[1].strip(")").split(" ")[1:]]
-        if len(allergens) == 1:
-            allergenToPotentialIngredients[allergens[0]] = set(ingredients)
-
-
-    return allergenToPotentialIngredients
-
-def eliminate(allergenToPotentialIngredients, foods):
-    allAllergens = allergenToPotentialIngredients.keys()
-    allAllergensLength = len(allAllergens)
-    sureMatch = dict()
-    print(allergenToPotentialIngredients)
-
-    while True:
-        for food in foods:
-            chunks = food.split("(")
+            chunks = line.split("(")
             ingredients = chunks[0].strip(" ").split(" ")
             allergens = [allergen.strip(",") for allergen in chunks[1].strip(")").split(" ")[1:]]
-            if len(allergens) > 1:
-                for allergen in allergens:
-                    if allergen not in sureMatch:
-                        ingredientsForAllergen: Set = allergenToPotentialIngredients[allergen]
-                        commonItems = set(ingredients).intersection(ingredientsForAllergen)
-                        if len(commonItems) == 1:
-                            sureMatch[allergen] = list(commonItems)[0]
-                            for x, ing in allergenToPotentialIngredients.items():
-                                if commonItems[0] in ing:
-                                    ingredients.remove(commonItems[0])
-                            del allergenToPotentialIngredients[allergen]
-            allergenWithSingleIngredient = []
-            for allerg, ings in allergenToPotentialIngredients.items():
-                if len(ings) == 1:
-                    sureMatch[allerg] = list(ings)[0]
-                    allergenWithSingleIngredient.append(allerg)
-            for item in allergenWithSingleIngredient:
-                del allergenToPotentialIngredients[item]
-
-            if len(sureMatch) == allAllergensLength:
-                return sureMatch
+            foods.append((ingredients, allergens))
+    return foods
 
 
-def getIngredientFrequency(foods):
-    ingredientToFrequency = dict()
+
+def findPossibleSourcesForAllergens(foods: List):
+    allergenToPossibleSourceIngredients: Dict[str, List[str]] = dict()
     for food in foods:
-        chunks = food.split("(")
-        ingredients = chunks[0].strip(" ").split(" ")
-        for ingredient in ingredients:
-            if ingredient in ingredientToFrequency:
-                ingredientToFrequency[ingredient] += 1
+        for allergen in food[1]:
+            if allergen in allergenToPossibleSourceIngredients:
+                allergenToPossibleSourceIngredients[allergen] = [ingredient for ingredient in food[0] if ingredient in allergenToPossibleSourceIngredients[allergen]]
             else:
-                ingredientToFrequency[ingredient] = 1
+                allergenToPossibleSourceIngredients[allergen] = [ingredient for ingredient in food[0]]
+    return allergenToPossibleSourceIngredients
 
-    return ingredientToFrequency
-
-
-def getAllergenlessIngredientsFrequencies(ingredientToFrequency, allergenToIngredient):
-    ingredientsContainingAllergen = set([value for key, value in allergenToIngredient.items()])
-
-    allFrequencies = 0
-    for ingredient, frequency in ingredientToFrequency.items():
-        if ingredient not in ingredientsContainingAllergen:
-            allFrequencies += frequency
-
-    return allFrequencies
+def countIngredientsOccurrencesInFoods(foods: List):
+    occurrences = {}
+    for food in foods:
+        for ingredient in food[0]:
+            if ingredient in occurrences:
+                occurrences[ingredient] += 1
+            else:
+                occurrences[ingredient] = 1
+    return occurrences
 
 
+def countIngredientsOccurrencesNotContainingAllergens(ingredientToFrequencies: Dict, allergenToPossibleSourceIngredients: Dict):
+    count = 0
+    for ingredient, frequency in ingredientToFrequencies.items():
+        if all(ingredient not in v for v in allergenToPossibleSourceIngredients.values()):
+            count += frequency
+    return count
 
 
-
-
-
+def getAllergenToSourceIngredient(allergenToPossibleSourceIngredients):
+    ingredientsSurelyContainingAllergen = set()
+    while any(len(a) > 1 for a in allergenToPossibleSourceIngredients.values()):
+        for allergen, ingredient in allergenToPossibleSourceIngredients.items():
+            if len(ingredient) == 1 and ingredient[0] not in ingredientsSurelyContainingAllergen:
+                ingredientsSurelyContainingAllergen.add(ingredient[0])
+            elif len(ingredient) > 1:
+                for i in ingredientsSurelyContainingAllergen:
+                    if i in ingredient:
+                        allergenToPossibleSourceIngredients[allergen].remove(i)
+    return allergenToPossibleSourceIngredients
 
 
 foods = getInput(INPUT_FILE)
+allergenToPossibleIngredients = findPossibleSourcesForAllergens(foods)
+ingredientToFrequencies = countIngredientsOccurrencesInFoods(foods)
 
-allPot = findPotentialIngredientsToAllergens(foods)
-#print(allPot)
+print(getAllergenToSourceIngredient(allergenToPossibleIngredients))
+print(countIngredientsOccurrencesNotContainingAllergens(ingredientToFrequencies, allergenToPossibleIngredients))
 
-sure = eliminate(allPot, foods)
-#print(sure)
-
-ingredientsToFrequencies = getIngredientFrequency(foods)
-
-finalRes = getAllergenlessIngredientsFrequencies(ingredientsToFrequencies, sure)
-print(finalRes)
+#
+#
+# print(allergens)
+# print(occurrences)
