@@ -63,14 +63,26 @@ def getAllergenToSourceIngredient(allergenToPossibleSourceIngredients):
     return allergenToPossibleSourceIngredients
 
 
+def createCanonicalDangerousIngredientList(allergenToIngredient: Dict[str, List[str]]):
+    dangerousIngredientList: str = ""
+    allergenToIngredientSortedByAllergen = dict(sorted(allergenToIngredient.items(), key=lambda item: item[0]))
+    print(allergenToIngredientSortedByAllergen)
+    ingredientsChained = list(allergenToIngredientSortedByAllergen.values())
+    print(ingredientsChained)
+    return ",".join(ingredient[0] for ingredient in ingredientsChained)
+
+
+
 foods = getInput(INPUT_FILE)
 allergenToPossibleIngredients = findPossibleSourcesForAllergens(foods)
 ingredientToFrequencies = countIngredientsOccurrencesInFoods(foods)
 
-print(getAllergenToSourceIngredient(allergenToPossibleIngredients))
+allergenToIngredient = getAllergenToSourceIngredient(allergenToPossibleIngredients)
+print(allergenToIngredient)
 print(countIngredientsOccurrencesNotContainingAllergens(ingredientToFrequencies, allergenToPossibleIngredients))
+print(createCanonicalDangerousIngredientList(allergenToIngredient))
 
-#
+# NOT bcdgfxhrdslvndrbdhbxtblbnmsrscxxnbvcrrfbrxcgtv
 #
 # print(allergens)
 # print(occurrences)
