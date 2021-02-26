@@ -21,31 +21,49 @@ class Player:
     def addCardToDeck(self, card: int):
         self.deck.append(card)
 
+    def addCardsToDeck(self, cards: List[int]):
+        for card in cards:
+            self.deck.append(card)
+
     def getCurrentDeckSize(self):
         return len(self.deck)
+
+    def addCurrentDeckToPreviousDecks(self):
+        self.previousDecksInMatch.append(deepcopy(self.deck))
 
 class CardGame:
     def __init__(self, firstPlayer: Player, secondPlayer: Player):
         self.firstPlayer = firstPlayer
         self.secondPlayer = secondPlayer
         self.gameEndResult = None
+        self.currentRoundResult = None
 
 
     def play(self) -> None:
         while self.firstPlayer.deck and self.secondPlayer.deck:
             playerOneFirstCard = self.firstPlayer.deck.pop(0)
             playerTwoFirstCard = self.secondPlayer.deck.pop(0)
-
-            if playerOneFirstCard > playerTwoFirstCard:
-                self.firstPlayer.addCardToDeck(playerOneFirstCard)
-                self.firstPlayer.addCardToDeck(playerTwoFirstCard)
-            elif playerTwoFirstCard > playerOneFirstCard:
-                self.secondPlayer.addCardToDeck(playerTwoFirstCard)
-                self.secondPlayer.addCardToDeck(playerOneFirstCard)
-            else:
-                ValueError("Cards have the same value.")
+            self._determineRoundWinner(playerOneFirstCard, playerTwoFirstCard)
+            self._addCardsToRoundWinningPlayerDeck(playerOneFirstCard, playerTwoFirstCard)
 
         self.gameEndResult = Winner.FIRST_PLAYER_WON if self.firstPlayer.deck else Winner.SECOND_PLAYER_WON
+
+    def _determineRoundWinner(self, playerOneFirstCard, playerTwoFirstCard):
+        if playerOneFirstCard > playerTwoFirstCard:
+            self.currentRoundResult = Winner.FIRST_PLAYER_WON
+        elif playerTwoFirstCard > playerOneFirstCard:
+            self.currentRoundResult = Winner.SECOND_PLAYER_WON
+        else:
+            raise ValueError("Tie for this round.")
+
+
+    def _addCardsToRoundWinningPlayerDeck(self, playerOneFirstCard, playerTwoFirstCard):
+        if self.currentRoundResult == Winner.FIRST_PLAYER_WON:
+            self.firstPlayer.addCardsToDeck([playerOneFirstCard, playerTwoFirstCard])
+        elif self.currentRoundResult == Winner.SECOND_PLAYER_WON:
+            self.secondPlayer.addCardsToDeck([playerTwoFirstCard, playerOneFirstCard])
+        else:
+            ValueError("No winner was determined for this round.")
 
 
     def calculateScore(self):
@@ -60,35 +78,23 @@ class CardGame:
         return score
 
 class RecursiveCombat(CardGame):
-    def play(self):
+    def play(self) -> None:
         while self.firstPlayer.deck and self.secondPlayer.deck:
-            if self.firstPlayer.hasCurrentDeckAppearedBefore() is True and self.secondPlayer.hasCurrentDeckAppearedBefore() is True:
-                print(self.firstPlayer.deck, " + ", self.firstPlayer.previousDecksInMatch)
-                print(self.secondPlayer.deck, " + ", self.secondPlayer.previousDecksInMatch)
+            if self.firstPlayer.hasCurrentDeckAppearedBefore() and self.secondPlayer.hasCurrentDeckAppearedBefore():
                 self.gameEndResult = Winner.FIRST_PLAYER_WON
                 return
 
-            self.firstPlayer.previousDecksInMatch.append(deepcopy(self.firstPlayer.deck))
-            self.secondPlayer.previousDecksInMatch.append(deepcopy(self.secondPlayer.deck))
+            self.firstPlayer.addCurrentDeckToPreviousDecks()
+            self.secondPlayer.addCurrentDeckToPreviousDecks()
 
             playerOneFirstCard = self.firstPlayer.deck.pop(0)
             playerTwoFirstCard = self.secondPlayer.deck.pop(0)
 
             if self.firstPlayer.getCurrentDeckSize() >= playerOneFirstCard and self.secondPlayer.getCurrentDeckSize() >= playerTwoFirstCard:
-                subgameWinner = self.playSubGame(playerOneFirstCard, playerTwoFirstCard)
-                if subgameWinner == Winner.FIRST_PLAYER_WON:
-                    self.firstPlayer.addCardToDeck(playerOneFirstCard)
-                    self.firstPlayer.addCardToDeck(playerTwoFirstCard)
-                elif subgameWinner == Winner.SECOND_PLAYER_WON:
-                    self.secondPlayer.addCardToDeck(playerTwoFirstCard)
-                    self.secondPlayer.addCardToDeck(playerOneFirstCard)
+                self.currentRoundResult = self.playSubGame(playerOneFirstCard, playerTwoFirstCard)
             else:
-                if playerOneFirstCard > playerTwoFirstCard:
-                    self.firstPlayer.addCardToDeck(playerOneFirstCard)
-                    self.firstPlayer.addCardToDeck(playerTwoFirstCard)
-                elif playerTwoFirstCard > playerOneFirstCard:
-                    self.secondPlayer.addCardToDeck(playerTwoFirstCard)
-                    self.secondPlayer.addCardToDeck(playerOneFirstCard)
+                self._determineRoundWinner(playerOneFirstCard, playerTwoFirstCard)
+            self._addCardsToRoundWinningPlayerDeck(playerOneFirstCard, playerTwoFirstCard)
 
         self.gameEndResult = Winner.FIRST_PLAYER_WON if self.firstPlayer.deck else Winner.SECOND_PLAYER_WON
 
@@ -154,7 +160,7 @@ playerTwo = Player(playerTwoCards)
 
 game = RecursiveCombat(playerOne, playerTwo)
 game.play()
-print(game.calculateScore()) # 9186 is too low
+print(game.calculateScore()) # 33206
 
 
 
