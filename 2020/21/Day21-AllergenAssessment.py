@@ -21,11 +21,15 @@ class AllergenSourceIdentifier:
 
     def countIngredientsOccurrencesNotContainingAllergens(self) -> int:
         self._countIngredientsOccurrencesInFoods()
-        allIngredients: List[List[str]] = list(self._allergenToPossibleSourceIngredients.values())
-        return sum(frequency for ingredient, frequency in self._ingredientToFrequency.items() if
-                   all(ingredient not in ingredients for ingredients in allIngredients))
+        allIngredientsPossiblyContainingAllergens: List[List[str]] = list(self._allergenToPossibleSourceIngredients.values())
 
-    def createCanonicalDangerousIngredientList(self) -> str:
+        ingredientsNotContainingAllerensFrequencyCount = 0
+        for ingredient, frequency in self._ingredientToFrequency.items():
+            if all(ingredient not in ingredients for ingredients in allIngredientsPossiblyContainingAllergens):
+                ingredientsNotContainingAllerensFrequencyCount += frequency
+        return ingredientsNotContainingAllerensFrequencyCount
+
+    def getCanonicalDangerousIngredientList(self) -> str:
         allergenToIngredientSortedByAllergen: AllergenToIngredientType = dict(sorted(self._allergenToPossibleSourceIngredients.items()))
         ingredientsSortedByAllergens: List[List[str]] = list(allergenToIngredientSortedByAllergen.values())
         if not all(len(ingredient) == 1 for ingredient in ingredientsSortedByAllergens):
@@ -38,21 +42,17 @@ class AllergenSourceIdentifier:
             for allergen, ingredients in self._allergenToPossibleSourceIngredients.items():
                 if len(ingredients) == 1 and ingredients[0] not in ingredientsSurelyContainingAllergen:
                     ingredientsSurelyContainingAllergen.add(ingredients[0])
-                elif len(ingredients) > 1:
-                    self._removeIdentifiedIngredientsFromPossibleAllergenSources(allergen, ingredientsSurelyContainingAllergen, ingredients)
+                    self._removeIdentifiedIngredientFromOtherAllergenSources(ingredients[0])
                 elif len(ingredients) == 0:
                     raise ValueError("Allergen seems to have no possible source.")
-
-    def getAllergenToIngredient(self) -> AllergenToIngredientType:
-        return self._allergenToPossibleSourceIngredients
 
     def _findPossibleSourcesForAllergens(self) -> AllergenToIngredientType:
         allergenToPossibleSourceIngredients: AllergenToIngredientType = dict()
         for food in self._foods:
             for allergen in food.allergens:
                 if allergen in allergenToPossibleSourceIngredients:
-                    allergenToPossibleSourceIngredients[allergen] = [ingredient for ingredient in food.ingredients if
-                                                                     ingredient in allergenToPossibleSourceIngredients[allergen]]
+                    allergenToPossibleSourceIngredients[allergen] = list(
+                        set(food.ingredients).intersection(set(allergenToPossibleSourceIngredients[allergen])))
                 else:
                     allergenToPossibleSourceIngredients[allergen] = food.ingredients
         return allergenToPossibleSourceIngredients
@@ -67,11 +67,10 @@ class AllergenSourceIdentifier:
                     ingredientToFrequency[ingredient] = 1
         self._ingredientToFrequency = ingredientToFrequency
 
-    def _removeIdentifiedIngredientsFromPossibleAllergenSources(self, allergen: str, ingredientsSurelyContainingAllergen: Set[str],
-                                                                possibleSourceIngredients: List[str]) -> None:
-        for ingredientSurelyContainingAllergen in ingredientsSurelyContainingAllergen:
-            if ingredientSurelyContainingAllergen in possibleSourceIngredients:
-                self._allergenToPossibleSourceIngredients[allergen].remove(ingredientSurelyContainingAllergen)
+    def _removeIdentifiedIngredientFromOtherAllergenSources(self, identifiedAllergenSourceIngredient: str) -> None:
+        for allergen, ingredients in self._allergenToPossibleSourceIngredients.items():
+            if len(ingredients) != 1 and identifiedAllergenSourceIngredient in ingredients:
+                ingredients.remove(identifiedAllergenSourceIngredient)
 
 
 def getInput(inputFile: str):
@@ -84,7 +83,9 @@ def getInput(inputFile: str):
             if len(chunks) != 2:
                 raise ValueError("Unexpected line format after splitting.")
             ingredients = chunks[0].strip(" ").split(" ")
-            allergens = [allergen.strip(",") for allergen in chunks[1].strip(")").split(" ")[1:]]
+            allergensRawData = chunks[1].strip(")").split(" ")
+            allergens = [allergen.strip(",") for allergen in allergensRawData[1:]]
+
             foods.append(Food(ingredients, allergens))
     return foods
 
@@ -94,7 +95,7 @@ def main():
     allergenSourceIdentifier = AllergenSourceIdentifier(foods)
     print(allergenSourceIdentifier.countIngredientsOccurrencesNotContainingAllergens())  # 2020
     allergenSourceIdentifier.determineAllergensToIngredientsExclusively()
-    print(allergenSourceIdentifier.createCanonicalDangerousIngredientList())  # bcdgf,xhrdsl,vndrb,dhbxtb,lbnmsr,scxxn,bvcrrfbr,xcgtv
+    print(allergenSourceIdentifier.getCanonicalDangerousIngredientList())  # bcdgf,xhrdsl,vndrb,dhbxtb,lbnmsr,scxxn,bvcrrfbr,xcgtv
 
 
 class AllergenSourceIdentifierTester(unittest.TestCase):
@@ -107,9 +108,9 @@ class AllergenSourceIdentifierTester(unittest.TestCase):
 
     def test_createCanonicalDangerousIngredientList_correctValueReturned(self):
         self.allergenSourceIdentifier.determineAllergensToIngredientsExclusively()
-        self.assertEqual(self.allergenSourceIdentifier.createCanonicalDangerousIngredientList(), "mxmxvkd,sqjhc,fvjkl")
+        self.assertEqual(self.allergenSourceIdentifier.getCanonicalDangerousIngredientList(), "mxmxvkd,sqjhc,fvjkl")
 
 
 if __name__ == '__main__':
-    # main()
+    #main()
     unittest.main()
