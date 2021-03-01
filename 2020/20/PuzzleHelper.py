@@ -15,8 +15,9 @@ def findTopLeftCorner(corners: List[Tile]) -> Tile:
     corner = corners[0]
     neighborsEdges = getAllEdgesFromAllNeighbors(corner)
     for _ in range(0, 4):
-        if (corner.rightEdge in neighborsEdges or corner.rightEdge[::-1] in neighborsEdges) and (
-                corner.bottomEdge in neighborsEdges or corner.bottomEdge[::-1] in neighborsEdges):
+        isRightEdgeAligning = corner.rightEdge in neighborsEdges or corner.rightEdge[::-1] in neighborsEdges
+        isBottomEdgeAligning = corner.bottomEdge in neighborsEdges or corner.bottomEdge[::-1] in neighborsEdges
+        if isRightEdgeAligning and isBottomEdgeAligning:
             return corner
         corner.rotateRight()
 

@@ -25,7 +25,7 @@ class Sea(Tile):
 
     def _countSeaMonstersInCurrentSeaAlignment(self) -> int:
         seaMonsterCount = 0
-        for j in range(1, len(self._pixelRows) - 1):
+        for j in range(0, len(self._pixelRows) - 2):
             for i in range(0, (len(self._pixelRows[j])) - self._seaMonster.getLength() - 1):
                 if self._isSeaMonsterHere(i, j):
                     seaMonsterCount += 1

@@ -43,9 +43,9 @@ def createTile(rawTileData: str) -> Tile:
 
 def createSeaMonster(fileName: str) -> SeaMonster:
     seaMonsterRawInput = getSeaMonsterInput(fileName)
-    seaMonster = SeaMonster()
-    coordinates = [Coordinates(i, j - 1) for j in range(0, len(seaMonsterRawInput)) for i in range(0, len(seaMonsterRawInput[j])) if seaMonsterRawInput[j][i] == "#"]
-    seaMonster.setCoordinates(coordinates)
+    coordinates = [Coordinates(i, j) for j in range(0, len(seaMonsterRawInput)) for i in range(0, len(seaMonsterRawInput[j])) if
+                   seaMonsterRawInput[j][i] == "#"]
+    seaMonster = SeaMonster(coordinates)
     return seaMonster
 
 
@@ -60,8 +60,8 @@ def main():
     puzzle.assemble()
     print(puzzle.getCornerTilesIdProduct())  # 28057939502729
 
-    edgeRemover = TileEdgesRemover()
     puzzleBoard = puzzle.getPuzzleBoard()
+    edgeRemover = TileEdgesRemover()
     boardWithTilePixelsFusedTogether = edgeRemover.createBoardWithTilePixelsFusedTogetherInRows(puzzleBoard)
     boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesPixelsFromBoard(boardWithTilePixelsFusedTogether)
 
@@ -92,10 +92,6 @@ class PuzzleAndSeaTester(unittest.TestCase):
         self.puzzle.assemble()
         sea = self.setUpSea()
         self.assertEqual(273, sea.calculateWaterRoughness())
-
-
-
-
 
 if __name__ == '__main__':
     # main()

@@ -2,14 +2,8 @@ from typing import List
 from Coordinates import Coordinates
 
 class SeaMonster:
-    def __init__(self):
-        self._coordinates: List[Coordinates] = []
-
-    def setCoordinates(self, coordinates: List[Coordinates]) -> None:
-        if not coordinates:
-            raise ValueError("Coordinates missing when setting coordinates for sea monster.")
-
-        self._coordinates = coordinates
+    def __init__(self, coordinates: List[Coordinates]):
+        self._coordinates: List[Coordinates] = coordinates
 
 
     def getCoordinates(self):
