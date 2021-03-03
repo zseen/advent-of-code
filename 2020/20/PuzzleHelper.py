@@ -15,8 +15,8 @@ def findTopLeftCorner(corners: List[Tile]) -> Tile:
     corner = corners[0]
     neighborsEdges = getAllEdgesFromAllNeighbors(corner)
     for _ in range(0, 4):
-        isRightEdgeAligning = corner.rightEdge in neighborsEdges or corner.rightEdge[::-1] in neighborsEdges
-        isBottomEdgeAligning = corner.bottomEdge in neighborsEdges or corner.bottomEdge[::-1] in neighborsEdges
+        isRightEdgeAligning = corner.getRightEdge() in neighborsEdges or corner.getRightEdge()[::-1] in neighborsEdges
+        isBottomEdgeAligning = corner.getBottomEdge() in neighborsEdges or corner.getBottomEdge()[::-1] in neighborsEdges
         if isRightEdgeAligning and isBottomEdgeAligning:
             return corner
         corner.rotateRight()
@@ -27,7 +27,7 @@ def findTopLeftCorner(corners: List[Tile]) -> Tile:
 def isHorizontalAlignmentPossible(correctlyAlignedTile: Tile, neighbor: Tile) -> bool:
     for _ in range(0, 2):
         for _ in range(0, 4):
-            if neighbor.leftEdge == correctlyAlignedTile.rightEdge:
+            if neighbor.getLeftEdge() == correctlyAlignedTile.getRightEdge():
                 return True
             neighbor.rotateRight()
         neighbor.flipSideways()
@@ -36,7 +36,7 @@ def isHorizontalAlignmentPossible(correctlyAlignedTile: Tile, neighbor: Tile) ->
 def isVerticalAlignmentPossible(correctlyAlignedTile: Tile, neighbor: Tile) -> bool:
     for _ in range(0, 2):
         for _ in range(0, 4):
-            if neighbor.topEdge == correctlyAlignedTile.bottomEdge:
+            if neighbor.getTopEdge() == correctlyAlignedTile.getBottomEdge():
                 return True
             neighbor.rotateRight()
         neighbor.flipSideways()

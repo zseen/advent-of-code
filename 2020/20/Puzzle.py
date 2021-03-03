@@ -29,7 +29,7 @@ class Puzzle:
 
     def _findCorners(self) -> None:
         self._findNeighborsForTiles()
-        self._corners = [tile for tile in self._tiles if len(tile.neighborTiles) == 2]
+        self._corners = [tile for tile in self._tiles if len(tile.getNeighborTiles()) == 2]
 
     def _findNeighborsForTiles(self) -> None:
         if not self._tiles:
@@ -40,8 +40,8 @@ class Puzzle:
                 tile1 = self._tiles[i]
                 tile2 = self._tiles[j]
                 if PH.areTilesNeighbors(tile1, tile2):
-                    tile1.neighborTiles.add(tile2)
-                    tile2.neighborTiles.add(tile1)
+                    tile1.addNeighborTile(tile2)
+                    tile2.addNeighborTile(tile1)
 
     def _arrangeTilesOnBoard(self) -> None:
         self._alignTopLeftCornerIntoBoard()
@@ -57,8 +57,8 @@ class Puzzle:
         topLeftCorner = self._corners[0]
         neighborsEdges = topLeftCorner.getAllEdgesFromAllNeighbors()
         for _ in range(0, 4):
-            isRightEdgeAligning = topLeftCorner.rightEdge in neighborsEdges or topLeftCorner.rightEdge[::-1] in neighborsEdges
-            isBottomEdgeAligning = topLeftCorner.bottomEdge in neighborsEdges or topLeftCorner.bottomEdge[::-1] in neighborsEdges
+            isRightEdgeAligning = topLeftCorner.getRightEdge() in neighborsEdges or topLeftCorner.getRightEdge()[::-1] in neighborsEdges
+            isBottomEdgeAligning = topLeftCorner.getBottomEdge() in neighborsEdges or topLeftCorner.getBottomEdge()[::-1] in neighborsEdges
             if isRightEdgeAligning and isBottomEdgeAligning:
                 self._board[0][0] = topLeftCorner
                 return
@@ -70,7 +70,7 @@ class Puzzle:
 
         currentTile = self._board[0][0]
         for columnIndex in range(1, len(self._board[0])):
-            for neighbor in currentTile.neighborTiles:
+            for neighbor in currentTile.getNeighborTiles():
                 if PH.isHorizontalAlignmentPossible(currentTile, neighbor):
                     self._board[0][columnIndex] = neighbor
                     currentTile = neighbor
@@ -82,6 +82,6 @@ class Puzzle:
 
     def _populateField(self, columnIndex: int, rowIndex: int) -> None:
         fixedTile = self._board[rowIndex - 1][columnIndex]
-        for neighbor in fixedTile.neighborTiles:
+        for neighbor in fixedTile.getNeighborTiles():
             if PH.isVerticalAlignmentPossible(fixedTile, neighbor):
                 self._board[rowIndex][columnIndex] = neighbor
