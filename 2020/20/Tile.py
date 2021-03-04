@@ -40,11 +40,7 @@ class Tile:
         if not self._pixelRows:
             raise ValueError("Problem with getting edges, no pixelRows found in tile.")
 
-        self._topEdge = self._pixelRows[0]
-        self._bottomEdge = self._pixelRows[-1]
-        self._rightEdge = self._buildEdge(-1)
-        self._leftEdge = self._buildEdge(0)
-        return [self._topEdge, self._bottomEdge, self._rightEdge, self._leftEdge]
+        return [self.getRightEdge(), self.getTopEdge(), self.getLeftEdge(), self.getBottomEdge()]
 
     def getNeighborTiles(self):
         return self._neighborTiles
