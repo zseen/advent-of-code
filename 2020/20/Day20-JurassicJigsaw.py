@@ -9,10 +9,10 @@ from Coordinates import Coordinates
 from TileEdgesRemover import TileEdgesRemover
 from TilesFuser import TilesFuser
 
-
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 SEA_MONSTER_PIXELS_FILE = "sea_monster.txt"
+
 
 def getWaterRoughness(fileName: str):
     puzzle = createPuzzle(fileName)
@@ -20,10 +20,12 @@ def getWaterRoughness(fileName: str):
     sea = createSea(puzzle)
     return sea.calculateWaterRoughness()
 
+
 def createPuzzle(fileName: str):
     tiles = createTiles(fileName)
     puzzle = Puzzle(tiles)
     return puzzle
+
 
 def createTiles(fileName: str) -> List[Tile]:
     with open(fileName, "r") as inputFile:
@@ -48,12 +50,13 @@ def createTile(rawTileData: str) -> Tile:
     return Tile(tileID, tiles)
 
 
-
 def createSea(puzzle: Puzzle):
     puzzleBoard = puzzle.getPuzzleBoard()
-    tilesFuser = TilesFuser()
+    assert puzzleBoard and puzzleBoard[0][0] is not None
+    tileEdgeLength = puzzleBoard[0][0].getTileEdgeLength()
+    tilesFuser = TilesFuser(tileEdgeLength)
     boardWithTilePixelsFusedTogether = tilesFuser.createBoardWithTilePixelsFusedTogether(puzzleBoard)
-    edgeRemover = TileEdgesRemover()
+    edgeRemover = TileEdgesRemover(tileEdgeLength)
     boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesPixelsFromBoard(boardWithTilePixelsFusedTogether)
     seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
     return Sea(boardWithTileEdgesRemoved, seaMonster)
@@ -72,7 +75,6 @@ def getSeaMonsterInput(fileName: str) -> List[str]:
         return inputFile.read().split("\n")
 
 
-
 def main():
     puzzle = createPuzzle(INPUT_FILE)
     puzzle.assemble()
@@ -88,6 +90,7 @@ class PuzzleAndSeaTester(unittest.TestCase):
 
     def test_calculateWaterRoughness_seaMonstersPresent_correctRoughnessReturned(self):
         self.assertEqual(273, getWaterRoughness(TEST_INPUT_FILE))
+
 
 if __name__ == '__main__':
     main()
