@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Set
 
 TEST_INPUT = "test_input.txt"
 INPUT_FILE = "input.txt"
@@ -13,59 +13,59 @@ class CrabCups:
         self.destinationCup = None
         self.pickedOutCups = []
 
-    def findCurrentCup(self):
+    def findCurrentCup(self) -> None:
         if not self.currentCup:
             self.currentCup = self.cups[0]
         else:
             currentCurrentCupIndex = self.cups.index(self.currentCup)
             self.currentCup = self.cups[currentCurrentCupIndex + 1] if currentCurrentCupIndex < len(self.cups) - 1 else self.cups[0]
 
-    def pickOutCupsNextToCurrentCup(self):
+    def pickOutCupsNextToCurrentCup(self) -> None:
         assert self.currentCup
         currentCupIndex = self.cups.index(self.currentCup)
         cupsNextToCurrentCupFromRightSide = len(self.cups) - currentCupIndex - 1
         cupsFromRightSideToPickCount = CUPS_TO_PICK_OUT_COUNT if cupsNextToCurrentCupFromRightSide >= CUPS_TO_PICK_OUT_COUNT else cupsNextToCurrentCupFromRightSide
         cupsFromLeftSideToPickCount = CUPS_TO_PICK_OUT_COUNT - cupsFromRightSideToPickCount
 
-        cupsToPick = self.cups[currentCupIndex + 1: currentCupIndex + cupsFromRightSideToPickCount + 1]
+        self.pickedOutCups = self.cups[currentCupIndex + 1: currentCupIndex + cupsFromRightSideToPickCount + 1]
         del self.cups[currentCupIndex + 1: currentCupIndex + cupsFromRightSideToPickCount + 1]
-
-
-        cupsToPick.extend(self.cups[0: cupsFromLeftSideToPickCount])
+        self.pickedOutCups.extend(self.cups[0: cupsFromLeftSideToPickCount])
         del self.cups[0: cupsFromLeftSideToPickCount]
 
 
-        self.pickedOutCups = cupsToPick
-
-
-    def selectDestinationCup(self):
+    def selectDestinationCup(self) -> None:
         assert self.currentCup
+        cupsAsSet = set(self.cups)
 
-        if self.currentCup - 1 in self.cups:
+        if self.currentCup - 1 in cupsAsSet:
             self.destinationCup = self.currentCup - 1
+        elif self.findSmallerCupThanCurrentCup(cupsAsSet) is not None:
+            self.destinationCup = self.findSmallerCupThanCurrentCup(cupsAsSet)
         else:
-            nextSmallerCupCandidate = self.currentCup - 2
-            while nextSmallerCupCandidate > 0:
-                if nextSmallerCupCandidate in self.cups:
-                    self.destinationCup = nextSmallerCupCandidate
-                    return
-                nextSmallerCupCandidate -= 1
             self.destinationCup = max(self.cups)
 
 
-    def putPickedOutCupsNextToDestionationCup(self):
+    def findSmallerCupThanCurrentCup(self, cupsAsSet: Set[int]) -> int:
+        nextSmallerCupCandidate = self.currentCup - 2
+        while nextSmallerCupCandidate > 0:
+            if nextSmallerCupCandidate in cupsAsSet:
+                return nextSmallerCupCandidate
+            nextSmallerCupCandidate -= 1
+
+
+    def putPickedOutCupsNextToDestionationCup(self) -> None:
         destinationCupIndex  = self.cups.index(self.destinationCup)
         for index in range(destinationCupIndex + 1, destinationCupIndex + len(self.pickedOutCups) + 1):
             self.cups.insert(index, self.pickedOutCups.pop(0))
 
-    def collectLabelsClockwiseAfterLabelOne(self):
+    def collectLabelsClockwiseAfterLabelOne(self) -> int:
         labelOneIndex = self.cups.index(1)
         chunkBeforeOne = self.cups[:labelOneIndex]
         chunkAfterOne = self.cups[labelOneIndex + 1: ]
-        return "".join(str(label) for label in chunkAfterOne) + "".join(str(label) for label in chunkBeforeOne)
+        return int("".join(str(label) for label in chunkAfterOne) + "".join(str(label) for label in chunkBeforeOne))
 
 
-    def play(self):
+    def play(self) -> None:
         for _ in range(ROUNDS_TO_PLAY):
             #print(self.cups)
             self.findCurrentCup()
@@ -81,15 +81,10 @@ class CrabCups:
 
 
 
-
-
 def getInput(fileName: str) -> List[int]:
     with open(fileName, "r") as inputFile:
         cupsRawData = inputFile.read()
         return [int(cup) for cup in cupsRawData.strip()]
-
-
-
 
 
 
