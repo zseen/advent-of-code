@@ -16,14 +16,13 @@ class Result(Enum):
 class Player:
     def __init__(self, deck: Deque[int]):
         self._deck: Deque[int] = deck
-        self._previousDecksInMatch: List[Deque[int]] = []
+        self._previousDecksInMatch: Set[str] = set()
 
     def getDeck(self) -> Deque[int]:
         return self._deck
 
     def addCardsToDeck(self, cards: List[int]) -> None:
-        for card in cards:
-            self._deck.append(card)
+        self._deck.extend(cards)
 
     def drawTopCardFromDeck(self) -> int:
         return self._deck.popleft()
@@ -32,11 +31,10 @@ class Player:
         return len(self._deck)
 
     def addCurrentDeckToPreviousDecks(self) -> None:
-        self._previousDecksInMatch.append(deepcopy(self._deck))
+        self._previousDecksInMatch.add(str(self._deck))
 
-    # Deque cannot be hashed, so a set cannot be used to store the previous decks
     def hasCurrentDeckAppearedBefore(self) -> bool:
-        return self._deck in self._previousDecksInMatch
+        return str(self._deck) in self._previousDecksInMatch
 
 
 class Combat:
@@ -44,7 +42,7 @@ class Combat:
         self._firstPlayer: Player = firstPlayer
         self._secondPlayer: Player = secondPlayer
         self._gameEndResult: Optional[Result] = None
-        self._currentRoundResult: Optional[Result] = None
+        # self._currentRoundResult: Optional[Result] = None
 
     def play(self) -> None:
         while self._firstPlayer.getDeck() and self._secondPlayer.getDeck():
@@ -54,23 +52,24 @@ class Combat:
     def _playRound(self) -> None:
         playerOneFirstCard: int = self._firstPlayer.drawTopCardFromDeck()
         playerTwoFirstCard: int = self._secondPlayer.drawTopCardFromDeck()
-        self._determineRoundWinner(playerOneFirstCard, playerTwoFirstCard)
-        self._addCardsToRoundWinningPlayerDeck(playerOneFirstCard, playerTwoFirstCard)
+        currentRoundResult = self._determineRoundWinner(playerOneFirstCard, playerTwoFirstCard)
+        self._addCardsToRoundWinningPlayerDeck(currentRoundResult, playerOneFirstCard, playerTwoFirstCard)
 
-    def _determineRoundWinner(self, playerOneFirstCard: int, playerTwoFirstCard: int) -> None:
+    def _determineRoundWinner(self, playerOneFirstCard: int, playerTwoFirstCard: int) -> Result:
+        assert playerOneFirstCard != playerTwoFirstCard
+
         if playerOneFirstCard > playerTwoFirstCard:
-            self._currentRoundResult = Result.FIRST_PLAYER_WON
-        elif playerTwoFirstCard > playerOneFirstCard:
-            self._currentRoundResult = Result.SECOND_PLAYER_WON
-        assert self._currentRoundResult is not None
+            return Result.FIRST_PLAYER_WON
+        else:
+            return Result.SECOND_PLAYER_WON
 
-    def _addCardsToRoundWinningPlayerDeck(self, playerOneFirstCard: int, playerTwoFirstCard: int) -> None:
-        if not self._currentRoundResult:
+    def _addCardsToRoundWinningPlayerDeck(self, currentRoundResult, playerOneFirstCard: int, playerTwoFirstCard: int) -> None:
+        if not currentRoundResult:
             raise ValueError("No result for current round!")
 
-        if self._currentRoundResult == Result.FIRST_PLAYER_WON:
+        if currentRoundResult == Result.FIRST_PLAYER_WON:
             self._firstPlayer.addCardsToDeck([playerOneFirstCard, playerTwoFirstCard])
-        elif self._currentRoundResult == Result.SECOND_PLAYER_WON:
+        elif currentRoundResult == Result.SECOND_PLAYER_WON:
             self._secondPlayer.addCardsToDeck([playerTwoFirstCard, playerOneFirstCard])
 
     def calculateScore(self) -> int:
@@ -94,34 +93,29 @@ class RecursiveCombat(Combat):
             playerOneFirstCard, playerTwoFirstCard = self._firstPlayer.drawTopCardFromDeck(), self._secondPlayer.drawTopCardFromDeck()
 
             if self._firstPlayer.getCurrentDeckSize() >= playerOneFirstCard and self._secondPlayer.getCurrentDeckSize() >= playerTwoFirstCard:
-                self._currentRoundResult = self._playSubGame(playerOneFirstCard, playerTwoFirstCard)
+                currentRoundResult = self._playSubGame(playerOneFirstCard, playerTwoFirstCard)
             else:
-                self._determineRoundWinner(playerOneFirstCard, playerTwoFirstCard)
-            self._addCardsToRoundWinningPlayerDeck(playerOneFirstCard, playerTwoFirstCard)
+                currentRoundResult = self._determineRoundWinner(playerOneFirstCard, playerTwoFirstCard)
+            self._addCardsToRoundWinningPlayerDeck(currentRoundResult, playerOneFirstCard, playerTwoFirstCard)
 
         self._gameEndResult = Result.FIRST_PLAYER_WON if self._firstPlayer.getDeck() else Result.SECOND_PLAYER_WON
 
-    def _playSubGame(self, playerOneFirstCard: int, playerTwoFirstCard: int) -> Result:
-        subGame = self._setUpSubGame(playerOneFirstCard, playerTwoFirstCard)
-        while subGame._firstPlayer.getDeck() and subGame._secondPlayer.getDeck():
-            if subGame._firstPlayer.hasCurrentDeckAppearedBefore() and subGame._secondPlayer.hasCurrentDeckAppearedBefore():
-                return Result.FIRST_PLAYER_WON
-            subGame._firstPlayer.addCurrentDeckToPreviousDecks()
-            subGame._secondPlayer.addCurrentDeckToPreviousDecks()
+    def _playSubGame(self, playerOneFirstCard: int, playerTwoFirstCard: int, playerOneDeck=None, playerTwoDeck=None, ) -> Result:
+        if not playerOneDeck and not playerTwoDeck:
+            playerOneDeck = self._firstPlayer.getDeck()
+            playerTwoDeck = self._secondPlayer.getDeck()
 
-            subGame._playRound()
-
+        subGame = self._setUpSubGame(playerOneFirstCard, playerTwoFirstCard, playerOneDeck, playerTwoDeck)
+        subGame.play()
         return Result.FIRST_PLAYER_WON if subGame._firstPlayer.getDeck() else Result.SECOND_PLAYER_WON
 
-    def _setUpSubGame(self, playerOneFirstCard: int, playerTwoFirstCard: int) -> Combat:
-        firstPlayerDeckForSubGame = deque(list(self._firstPlayer.getDeck())[:playerOneFirstCard])
-        secondPlayerDeckForSubGame = deque(list(self._secondPlayer.getDeck())[:playerTwoFirstCard])
-
+    def _setUpSubGame(self, playerOneFirstCard: int, playerTwoFirstCard: int, playerOneDeck, playerTwoDeck) -> Combat:
+        firstPlayerDeckForSubGame = deque(list(playerOneDeck)[:playerOneFirstCard])
+        secondPlayerDeckForSubGame = deque(list(playerTwoDeck)[:playerTwoFirstCard])
         firstPlayer = Player(firstPlayerDeckForSubGame)
         secondPlayer = Player(secondPlayerDeckForSubGame)
 
-        subGame = Combat(firstPlayer, secondPlayer)
-        return subGame
+        return RecursiveCombat(firstPlayer, secondPlayer)
 
 
 def getInput(inputFile: str) -> Tuple[Deque[int], Deque[int]]:
@@ -139,14 +133,12 @@ def main():
 
     playerOneForCombat = Player(deepcopy(playerOneCards))
     playerTwoForCombat = Player(deepcopy(playerTwoCards))
-
     combat = Combat(playerOneForCombat, playerTwoForCombat)
     combat.play()
     print(combat.calculateScore())  # 32272
 
     playerOneForRecursiveCombat = Player(playerOneCards)
     playerTwoRecursiveCombat = Player(playerTwoCards)
-
     recursiveCombat = RecursiveCombat(playerOneForRecursiveCombat, playerTwoRecursiveCombat)
     recursiveCombat.play()
     print(recursiveCombat.calculateScore())  # 33206
