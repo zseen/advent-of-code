@@ -1,5 +1,6 @@
 import unittest
 from typing import List, Set, Dict
+from collections import OrderedDict
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
@@ -30,7 +31,7 @@ class AllergenSourceIdentifier:
         return ingredientsNotContainingAllerensFrequencyCount
 
     def getCanonicalDangerousIngredientList(self) -> str:
-        allergenToIngredientSortedByAllergen: AllergenToIngredientType = dict(sorted(self._allergenToPossibleSourceIngredients.items()))
+        allergenToIngredientSortedByAllergen: OrderedDict[str, List[str]] = OrderedDict(sorted(self._allergenToPossibleSourceIngredients.items()))
         ingredientsSortedByAllergens: List[List[str]] = list(allergenToIngredientSortedByAllergen.values())
         if not all(len(ingredient) == 1 for ingredient in ingredientsSortedByAllergens):
             raise ValueError("Allergen seems to be mapped to ingredient incorrectly.")
