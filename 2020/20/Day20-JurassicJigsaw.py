@@ -14,17 +14,17 @@ TEST_INPUT_FILE = "test_input.txt"
 SEA_MONSTER_PIXELS_FILE = "sea_monster.txt"
 
 
-def getWaterRoughness(fileName: str):
-    puzzle = createPuzzle(fileName)
+def getWaterRoughness(puzzle: Puzzle):
     puzzle.assemble()
-    sea = createSea(puzzle)
+    seaWater = createSea(puzzle.getPuzzleBoard())
+    seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
+    sea = Sea(seaWater, seaMonster)
     return sea.calculateWaterRoughness()
 
 
-def createPuzzle(fileName: str):
+def createPuzzle(fileName: str) -> Puzzle:
     tiles = createTiles(fileName)
-    puzzle = Puzzle(tiles)
-    return puzzle
+    return Puzzle(tiles)
 
 
 def createTiles(fileName: str) -> List[Tile]:
@@ -50,24 +50,20 @@ def createTile(rawTileData: str) -> Tile:
     return Tile(tileID, tiles)
 
 
-def createSea(puzzle: Puzzle):
-    puzzleBoard = puzzle.getPuzzleBoard()
+def createSea(puzzleBoard: PH.BoardType) -> List[str]:
     assert puzzleBoard and puzzleBoard[0][0] is not None
     tileEdgeLength = puzzleBoard[0][0].getTileEdgeLength()
     tilesFuser = TilesFuser(tileEdgeLength)
     boardWithTilePixelsFusedTogether = tilesFuser.createBoardWithTilePixelsFusedTogether(puzzleBoard)
     edgeRemover = TileEdgesRemover(tileEdgeLength)
-    boardWithTileEdgesRemoved = edgeRemover.removeTileEdgesPixelsFromBoard(boardWithTilePixelsFusedTogether)
-    seaMonster = createSeaMonster(SEA_MONSTER_PIXELS_FILE)
-    return Sea(boardWithTileEdgesRemoved, seaMonster)
+    return edgeRemover.removeTileEdgesPixelsFromBoard(boardWithTilePixelsFusedTogether)
 
 
 def createSeaMonster(fileName: str) -> SeaMonster:
     seaMonsterRawInput = getSeaMonsterInput(fileName)
     coordinates = [Coordinates(i, j) for j in range(0, len(seaMonsterRawInput)) for i in range(0, len(seaMonsterRawInput[j])) if
                    seaMonsterRawInput[j][i] == "#"]
-    seaMonster = SeaMonster(coordinates)
-    return seaMonster
+    return SeaMonster(coordinates)
 
 
 def getSeaMonsterInput(fileName: str) -> List[str]:
@@ -79,7 +75,7 @@ def main():
     puzzle = createPuzzle(INPUT_FILE)
     puzzle.assemble()
     print(puzzle.getCornerTilesIdProduct())  # 28057939502729
-    print(getWaterRoughness(INPUT_FILE))  # 2489
+    print(getWaterRoughness(puzzle))  # 2489
 
 
 class PuzzleAndSeaTester(unittest.TestCase):
@@ -89,7 +85,9 @@ class PuzzleAndSeaTester(unittest.TestCase):
         self.assertEqual(20899048083289, puzzle.getCornerTilesIdProduct())
 
     def test_calculateWaterRoughness_seaMonstersPresent_correctRoughnessReturned(self):
-        self.assertEqual(273, getWaterRoughness(TEST_INPUT_FILE))
+        puzzle = createPuzzle(TEST_INPUT_FILE)
+        puzzle.assemble()
+        self.assertEqual(273, getWaterRoughness(puzzle))
 
 
 if __name__ == '__main__':

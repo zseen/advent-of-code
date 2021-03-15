@@ -25,7 +25,9 @@ class Puzzle:
             raise ValueError("No tiles to build the puzzle from.")
 
         self._findCorners()
-        self._arrangeTilesOnBoard()
+        self._alignTopLeftCornerIntoBoard()
+        self._fillUpPuzzleFirstRow()
+        self._fillUpPuzzleBody()
 
     def _findCorners(self) -> None:
         self._findNeighborsForTiles()
@@ -42,11 +44,6 @@ class Puzzle:
                 if PH.areTilesNeighbors(tile1, tile2):
                     tile1.addNeighborTile(tile2)
                     tile2.addNeighborTile(tile1)
-
-    def _arrangeTilesOnBoard(self) -> None:
-        self._alignTopLeftCornerIntoBoard()
-        self._fillUpPuzzleFirstRow()
-        self._fillUpPuzzleBody()
 
     def _alignTopLeftCornerIntoBoard(self) -> None:
         assert self._board
