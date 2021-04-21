@@ -4,7 +4,7 @@ TEST_INPUT = "test_input.txt"
 INPUT_FILE = "input.txt"
 
 CUPS_TO_PICK_OUT_COUNT = 3
-ROUNDS_TO_PLAY = 100
+ROUNDS_TO_PLAY = 10000000
 
 
 
@@ -12,33 +12,45 @@ class Cup:
     def __init__(self, label):
         self.label = label
         self.nextCup = None
-        #self.previousCup = None
 
 class Cups:
     def __init__(self):
         self.headCup = None
+        self.tailCup = None
         self.cupsCount = 0
 
     def addCup(self, cupToAdd: Cup):
         if not self.headCup:
             self.headCup = cupToAdd
+            self.tailCup = cupToAdd
         else:
-            currentCup = self.headCup
-            for i in range(0, self.cupsCount - 1):
-                currentCup = currentCup.nextCup
-            currentCup.nextCup = cupToAdd
-            cupToAdd.nextCup = self.headCup
+            self.tailCup.nextCup = cupToAdd
+            self.tailCup = cupToAdd
+            self.tailCup.nextCup = self.headCup
         self.cupsCount += 1
+
+    def rotate(self):
+        currentHeadCup = self.headCup
+        self.headCup = self.headCup.nextCup
+        self.tailCup = currentHeadCup
+
+    def __iter__(self):
+        if self.headCup is None:
+            return iter(())
+        curr = self.headCup
+        while True:
+            yield curr.label
+            curr = curr.nextCup
+            if curr == self.headCup:
+                break
 
 
     def printCupsLabels(self):
         assert self.headCup
         currentCup = self.headCup
-
         for i in range(0, self.cupsCount):
             print(currentCup.label)
             currentCup = currentCup.nextCup
-
 
 
 class CrabCups:
@@ -48,7 +60,6 @@ class CrabCups:
         self.destinationCup = None
         self.cupsLabelsToNodes = self.getCupsLabelsToNodes()
         self.pickedOutCups = []
-        self.currentCupPosition = None
 
 
     def getCupsLabelsToNodes(self):
@@ -62,10 +73,9 @@ class CrabCups:
 
     def findCurrentCup(self):
         assert self.cups
-        if not self.currentCup:
-            self.currentCup = self.cups.headCup
-        else:
-            self.currentCup = self.currentCup.nextCup
+        self.currentCup = self.cups.headCup
+
+
             #self.cups.headCup = self.currentCup
 
     def pickOutCupsNextToCurrentCup(self):
@@ -81,30 +91,31 @@ class CrabCups:
 
         self.currentCup.nextCup = currentCup.nextCup
 
-    def findDestionationCup(self):
+    def findDestinationCup(self):
         assert self.cups
-        cupsAsSet = set(self.cupsLabelsToNodes.keys())
+        cupsAsSetWithoutPicketOutCups = set(self.cupsLabelsToNodes.keys()) - set([cup.label for cup in self.pickedOutCups])
 
-        if self.currentCup.label - 1 in cupsAsSet:
+        if self.currentCup.label - 1 in cupsAsSetWithoutPicketOutCups:
             self.destinationCup = self.cupsLabelsToNodes[self.currentCup.label - 1]
-        elif self.findSmallerCupThanCurrentCup(cupsAsSet) is not None:
-            self.destinationCup = self.findSmallerCupThanCurrentCup(cupsAsSet)
+        elif self.findSmallerCupThanCurrentCup(cupsAsSetWithoutPicketOutCups) is not None:
+            self.destinationCup = self.findSmallerCupThanCurrentCup(cupsAsSetWithoutPicketOutCups)
         else:
-            self.destinationCup = self.cupsLabelsToNodes[max(cupsAsSet)]
+            self.destinationCup = self.cupsLabelsToNodes[max(cupsAsSetWithoutPicketOutCups)]
+
+        assert self.destinationCup
 
 
     def findSmallerCupThanCurrentCup(self, cupsAsSet: Set[int]) -> Cup:
-        nextSmallerCupCandidate = self.currentCup - 2
+        nextSmallerCupCandidate = self.currentCup.label - 2
         while nextSmallerCupCandidate > 0:
             if nextSmallerCupCandidate in cupsAsSet:
                 return self.cupsLabelsToNodes[nextSmallerCupCandidate]
             nextSmallerCupCandidate -= 1
 
-    def putPickedOutCupsNextToDestionationCup(self) -> None:
+    def putPickedOutCupsNextToDestinationCup(self) -> None:
         cupToVisitInOriginalCups = self.destinationCup
         destinationCupNextCup = self.destinationCup.nextCup
         cupToVisitInPickedOutCups = None
-
 
         for i in range(0, CUPS_TO_PICK_OUT_COUNT):
             cupToVisitInPickedOutCups = self.pickedOutCups[i]
@@ -114,12 +125,17 @@ class CrabCups:
         cupToVisitInPickedOutCups.nextCup = destinationCupNextCup
         self.cups.cupsCount += CUPS_TO_PICK_OUT_COUNT
         self.pickedOutCups = []
+        self.cups.rotate()
 
     def collectLabelsClockwiseAfterLabelOne(self) -> int:
-        cupWithLabelOne = self.cupsLabelsToNodes[1]
-        chunkBeforeOne = self.cups[:labelOneIndex]
-        chunkAfterOne = self.cups[labelOneIndex + 1: ]
-        return int("".join(str(label) for label in chunkAfterOne) + "".join(str(label) for label in chunkBeforeOne))
+        pass
+
+    def play(self):
+        self.findCurrentCup()
+        self.pickOutCupsNextToCurrentCup()
+        self.findDestinationCup()
+        self.putPickedOutCupsNextToDestinationCup()
+
 
 
 
@@ -213,7 +229,13 @@ def getInput(fileName: str) -> List[int]:
 
 
 cups = getInput(TEST_INPUT)
+#print(cups)
 print(cups)
+
+for i in range(max(cups) + 1, 1000000 + 1):
+    cups.append(i)
+
+
 cupsClass = Cups()
 
 cupsToAdd = [Cup(i) for i in cups]
@@ -221,18 +243,17 @@ for cup in cupsToAdd:
     cupsClass.addCup(cup)
 
 crabCups = CrabCups(cupsClass)
-crabCups.findCurrentCup()
-#print(crabCups.currentCup.label)
-crabCups.pickOutCupsNextToCurrentCup()
-# for cup in crabCups.pickedOutCups:
-#     print(cup.label)
 
-#crabCups.cups.printCupsLabels()
-print(crabCups.cupsLabelsToNodes)
-crabCups.findDestionationCup()
-#print(crabCups.destinationCup.label)
-crabCups.putPickedOutCupsNextToDestionationCup()
-crabCups.cups.printCupsLabels()
+
+for i in range(0, ROUNDS_TO_PLAY):
+    crabCups.play()
+
+
+
+while crabCups.cups.headCup.label != 1:
+    crabCups.cups.rotate()
+
+print("Part 2:", crabCups.cups[1].nextCup.label * crabCups.cups[1].nextCup.nextCup.label)
 
 
 
