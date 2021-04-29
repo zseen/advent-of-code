@@ -1,56 +1,19 @@
+import unittest
 from typing import List, Set, Dict, Optional
 from copy import deepcopy
+from Profiling import doProfiling
+from Cup import Cup
+from Cups import Cups
 
 TEST_INPUT = "test_input.txt"
 INPUT_FILE = "input.txt"
 
 CUPS_TO_PICK_OUT_COUNT = 3
-
 ROUNDS_TO_PLAY_PART_ONE = 100
 ROUNDS_TO_PLAY_PART_TWO = 10_000_000
+CUPS_NUM_IN_PART_TWO = 1_000_000
 
-
-
-class Cup:
-    def __init__(self, label: int):
-        self.label: int = label
-        self.nextCup: Optional[Cup] = None
-
-class Cups:
-    def __init__(self):
-        self.headCup: Optional[Cup] = None
-        self.tailCup: Optional[Cup] = None
-        self.cupsCount: int = 0
-
-    def addCup(self, cupToAdd: Cup) -> None:
-        if not self.headCup:
-            self.headCup = cupToAdd
-            self.tailCup = cupToAdd
-        else:
-            self.tailCup.nextCup = cupToAdd
-            self.tailCup = cupToAdd
-            self.tailCup.nextCup = self.headCup
-        self.cupsCount += 1
-
-    def rotate(self) -> None:
-        currentHeadCup = self.headCup
-        self.headCup = self.headCup.nextCup
-        self.tailCup = currentHeadCup
-
-    def __iter__(self) -> None:
-        if self.headCup is None:
-            return iter(())
-        currentCup: Cup = self.headCup
-        for i in range(self.cupsCount):
-            yield currentCup.label
-            currentCup = currentCup.nextCup
-
-
-    def printCupsLabels(self) -> None:
-        currentCup: Cup = self.headCup
-        for i in range(0, self.cupsCount):
-            print(currentCup.label)
-            currentCup = currentCup.nextCup
+SHOULD_DO_PROFILING = False
 
 
 class CrabCups:
@@ -68,13 +31,11 @@ class CrabCups:
         self._findDestinationCup()
         self._putPickedOutCupsNextToDestinationCup()
 
-
     def _findCurrentCup(self) -> None:
         assert self.cups
         if self.currentCup:
             self.cups.rotate()
         self.currentCup = self.cups.headCup
-
 
     def _pickOutCupsNextToCurrentCup(self) -> None:
         assert self.currentCup
@@ -99,7 +60,7 @@ class CrabCups:
     def _putPickedOutCupsNextToDestinationCup(self) -> None:
         assert len(self.pickedOutCups) == CUPS_TO_PICK_OUT_COUNT
 
-        cupToVisitInOriginalCups:Cup = self.destinationCup
+        cupToVisitInOriginalCups: Cup = self.destinationCup
         originalDestinationCupNextCup: Cup = self.destinationCup.nextCup
         cupToVisitInPickedOutCups: Optional[Cup] = None
 
@@ -110,7 +71,6 @@ class CrabCups:
             self.cups.cupsCount += 1
 
         cupToVisitInPickedOutCups.nextCup = originalDestinationCupNextCup
-
 
     def _getCupLabelsToCup(self) -> Dict[int, Cup]:
         assert self.cups
@@ -137,79 +97,70 @@ class CrabCups:
                 return possibleMaxCup
 
 
-
 def getInput(fileName: str) -> List[int]:
     with open(fileName, "r") as inputFile:
         cupsRawData = inputFile.read()
         return [int(cupLabel) for cupLabel in cupsRawData.strip()]
 
 
-
-
 def createCupsFromLabels(cupLabels: List[int]) -> Cups:
-    cups = Cups()
+    cups: Cups = Cups()
     cupsToAdd: List[Cup] = [Cup(label) for label in cupLabels]
     for cup in cupsToAdd:
         cups.addCup(cup)
     return cups
 
 
-# Part 1
+def addMoreCupLabelsUntilLimitInclusive(cupLabels: List[int], limit: int) -> None:
+    for i in range(max(cupLabels) + 1, limit + 1):
+        cupLabels.append(i)
+
+
+def runGame(crabCups: CrabCups, roundsToPlay: int) -> None:
+    for i in range(0, roundsToPlay):
+        crabCups.play()
+
 
 def main():
     cupLabels = deepcopy(getInput(INPUT_FILE))
+
     cups: Cups = createCupsFromLabels(cupLabels)
-
     crabCups: CrabCups = CrabCups(cups)
-    for i in range(0, ROUNDS_TO_PLAY_PART_ONE):
-        crabCups.play()
+    runGame(crabCups, ROUNDS_TO_PLAY_PART_ONE)
+    crabCups.cups.rotateUntilDesiredHeadLabel(1)
+    print("".join(map(str, crabCups.cups))[1:]) # "58427369"
 
-    while crabCups.cups.headCup.label != 1:
-        crabCups.cups.rotate()
+    addMoreCupLabelsUntilLimitInclusive(cupLabels, CUPS_NUM_IN_PART_TWO)
+    cups: Cups = createCupsFromLabels(cupLabels)
+    crabCups: CrabCups = CrabCups(cups)
+    runGame(crabCups, ROUNDS_TO_PLAY_PART_TWO)
+    crabCups.cups.rotateUntilDesiredHeadLabel(1)
+    print(crabCups.cupLabelToCup[1].nextCup.label * crabCups.cupLabelToCup[1].nextCup.nextCup.label) # 111057672960
 
-    print("Part 1:", "".join(map(str, crabCups.cups))[1:]) #"67384529" for test input, "58427369" for input
+    if SHOULD_DO_PROFILING:
+        doProfiling(runGame, crabCups, ROUNDS_TO_PLAY_PART_TWO)
+
+
+class CrabCupsTester(unittest.TestCase):
+    def setUp(self) -> None:
+        self.cupLabels = deepcopy(getInput(TEST_INPUT))
+
+    def test_fewerCupsAndRounds_cupsLabelsAfterCupOneReturned(self):
+        cups: Cups = createCupsFromLabels(self.cupLabels)
+        crabCups: CrabCups = CrabCups(cups)
+        runGame(crabCups, ROUNDS_TO_PLAY_PART_ONE)
+        crabCups.cups.rotateUntilDesiredHeadLabel(1)
+        self.assertEqual("".join(map(str, crabCups.cups))[1:], "67384529")
+
+    def test_moreCupsAndRounds_twoCupsLabelsAfterCupOneMultipledTogetherReturned(self):
+        addMoreCupLabelsUntilLimitInclusive(self.cupLabels, CUPS_NUM_IN_PART_TWO)
+        cups: Cups = createCupsFromLabels(self.cupLabels)
+        crabCups: CrabCups = CrabCups(cups)
+        runGame(crabCups, ROUNDS_TO_PLAY_PART_TWO)
+        crabCups.cups.rotateUntilDesiredHeadLabel(1)
+        self.assertEqual(crabCups.cupLabelToCup[1].nextCup.label * crabCups.cupLabelToCup[1].nextCup.nextCup.label, 149245887792)
+
 
 if __name__ == '__main__':
-    main()
-
-
-# # Part 2
-# for i in range(max(cups) + 1, 1000000 + 1):
-#     cups.append(i)
-#
-# cupsClass = Cups()
-#
-# cupsToAdd = [Cup(i) for i in cups]
-# for cup in cupsToAdd:
-#     cupsClass.addCup(cup)
-#
-# crabCups = CrabCups(cupsClass)
-#
-#
-#
-# def runGame():
-#     for i in range(0, ROUNDS_TO_PLAY_PART_TWO):
-#         crabCups.play()
-#
-# import cProfile
-#
-# #cProfile.run('runGame()')
-# pr = cProfile.Profile()
-# pr.enable()
-#
-# for i in range(1):
-#     pr.run("runGame()")
-# pr.disable()
-# pr.print_stats(sort='time')
-#
-#
-# #runGame()
-#
-#
-# while crabCups.cups.headCup.label != 1:
-#     crabCups.cups.rotate()
-#
-# print("Part 2:", crabCups.cupsLabelsToNodes[1].nextCup.label * crabCups.cupsLabelsToNodes[1].nextCup.nextCup.label) # 149245887792 for test input, 111057672960 for real input
-#
-#
-#
+    # main()
+    unittest.main()
