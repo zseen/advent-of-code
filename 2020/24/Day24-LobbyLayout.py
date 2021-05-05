@@ -1,5 +1,6 @@
 from typing import List, Set, Dict
 from enum import Enum
+from collections import Counter
 
 FLOOR_SIZE = 100
 
@@ -30,14 +31,14 @@ class Tile:
 
 class Lobby:
     def __init__(self, tileFlippingDirectionsCollection: List[List[NeighbourDirection]]):
-        #self.floorTiles = [[TileColour.WHITE for _ in range(FLOOR_SIZE)] for _ in range(FLOOR_SIZE)]
         self.centreTile = Tile(0, 0)
         self.currentTile = None
-        #self.tiles: Set[Tile] = {self.centreTile}
         self.tileFlippingDirectionsCollection = tileFlippingDirectionsCollection
         self.blackTilesCount = 0
         self.coordinatesToTile: Dict[str, Tile] = dict()
-        self.tiles = []
+        self.repeatedVisitCounter = 0
+        self.rep = []
+        self.blacktiles = []
 
     def followFlippingDirections(self):
         for tileFlippingDirections in self.tileFlippingDirectionsCollection:
@@ -46,11 +47,19 @@ class Lobby:
     def _followFlippingDirection(self, tileFlippingDirections: List[NeighbourDirection]):
         self.currentTile = self.centreTile
 
+        self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)] = self.currentTile
+
+
         for direction in tileFlippingDirections:
             self.moveToTile(direction)
 
-        self.flipTile(self.currentTile)
-        self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)] = self.currentTile
+        if (str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)) in self.coordinatesToTile:
+            self.currentTile = self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)]
+            self.flipTile(self.currentTile)
+        else:
+            self.flipTile(self.currentTile)
+            self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)] = self.currentTile
+
         #self.tiles.append(self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)])
         #self.flipTile(self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)])
 
@@ -96,15 +105,14 @@ class Lobby:
         else:
             tileToFlip.colour = TileColour.WHITE
 
-
     def getBlackTilesCount(self):
         tiles = self.coordinatesToTile.values()
+        print("coordinatestotilelength: ", len(self.coordinatesToTile))
         cnt = 0
         for tile in tiles:
             if tile.colour == TileColour.BLACK:
                 cnt += 1
         return cnt
-
 
 
 def getInput(inputFile: str):
@@ -136,23 +144,22 @@ def getInput(inputFile: str):
                     raise ValueError("Unexpected direction when reading input.", line[charPosition])
                 charPosition += 1
 
-            if charPosition < len(line):
+            if charPosition == len(line) - 1:
                 if line[charPosition] == NeighbourDirection.EAST.value:
                     directions.append(NeighbourDirection.EAST)
                 elif line[charPosition] == NeighbourDirection.WEST.value:
                     directions.append(NeighbourDirection.WEST)
 
-
             directionsCollection.append(directions)
-
-
-
     return directionsCollection
 
 
-dirColl = getInput(INPUT_FILE)   # 396 too high
+dirColl = getInput(INPUT_FILE)   # 396 too high, 371 too low, 380 too high, not 375
 
 l = Lobby(dirColl)
+print("all tiles count: ", len(dirColl))
 l.followFlippingDirections()
-print(l.getBlackTilesCount())
+print("black tiles count: ", l.getBlackTilesCount())
 
+#print(l.repeatedVisitCounter)
+#print(len(l.uniqueTiles))
