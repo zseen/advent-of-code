@@ -46,19 +46,17 @@ class Lobby:
 
     def _followFlippingDirection(self, tileFlippingDirections: List[NeighbourDirection]):
         self.currentTile = self.centreTile
-
-        self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)] = self.currentTile
-
+        #self.coordinatesToTile[str(self.currentTile.coordinates.x) + "," + str(self.currentTile.coordinates.y)] = self.currentTile
 
         for direction in tileFlippingDirections:
             self.moveToTile(direction)
 
-        if (str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)) in self.coordinatesToTile:
-            self.currentTile = self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)]
-            self.flipTile(self.currentTile)
+        if (str(self.currentTile.coordinates.x) + "," + str(self.currentTile.coordinates.y)) in self.coordinatesToTile:
+            self.currentTile = self.coordinatesToTile[str(self.currentTile.coordinates.x) + "," + str(self.currentTile.coordinates.y)]
+            self.flipCurrentTile()
         else:
-            self.flipTile(self.currentTile)
-            self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)] = self.currentTile
+            self.flipCurrentTile()
+            self.coordinatesToTile[str(self.currentTile.coordinates.x) + "," + str(self.currentTile.coordinates.y)] = self.currentTile
 
         #self.tiles.append(self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)])
         #self.flipTile(self.coordinatesToTile[str(self.currentTile.coordinates.x) + str(self.currentTile.coordinates.y)])
@@ -99,11 +97,13 @@ class Lobby:
         #     raise ValueError("Unknown direction to follow.")
 
 
-    def flipTile(self, tileToFlip):
-        if tileToFlip.colour == TileColour.WHITE:
-            tileToFlip.colour = TileColour.BLACK
+    def flipCurrentTile(self):
+        if self.currentTile.colour == TileColour.WHITE:
+            self.currentTile.colour = TileColour.BLACK
+        elif self.currentTile.colour == TileColour.BLACK:
+            self.currentTile.colour = TileColour.WHITE
         else:
-            tileToFlip.colour = TileColour.WHITE
+            raise ValueError("Unkown tile colour: ", self.currentTile.colour)
 
     def getBlackTilesCount(self):
         tiles = self.coordinatesToTile.values()
@@ -113,6 +113,134 @@ class Lobby:
             if tile.colour == TileColour.BLACK:
                 cnt += 1
         return cnt
+
+
+class Exhibition:
+    def __init__(self, lobby: Lobby):
+        self.lobby = lobby
+        self.currentFloorAlignment = self.lobby.coordinatesToTile
+        self.nextFloorAlignment = dict()
+        self.blackTiles = set([tile for tile in self.currentFloorAlignment.values() if tile.colour == TileColour.BLACK])
+
+    # def getBlackTilesCount(self):
+    #     tiles = self.currentFloorAlignment.values()
+    #     cnt = 0
+    #     for tile in tiles:
+    #         if tile.colour == TileColour.BLACK:
+    #             cnt += 1
+    #     return cnt
+    #
+    # def getNextFloorAlignment(self):
+    #     for coordinates, tile in self.currentFloorAlignment.items():
+    #         self.shouldFlipTile(tile)
+    #         self.nextFloorAlignment[coordinates] = tile
+    #
+    #     self.currentFloorAlignment = self.nextFloorAlignment
+
+
+    def shouldFlipTile(self, tile: Tile):
+        blackNeighboursCount = self.getBlackNeighboursCount(tile)
+        if tile.colour == TileColour.WHITE:
+            if blackNeighboursCount == 2:
+                tile.colour = TileColour.BLACK
+        elif tile.colour == TileColour.BLACK:
+            if blackNeighboursCount > 2 or blackNeighboursCount == 0:
+                tile.colour = TileColour.WHITE
+
+    def getBlackNeighboursCount(self, tile: Tile):
+        tileXCoordinate = tile.coordinates.x
+        tileYCoordinate = tile.coordinates.y
+        blackNeighboursCount = 0
+
+        if self.isNeighbourBlack(tileXCoordinate - 2, tileYCoordinate):
+            blackNeighboursCount += 1
+
+        if self.isNeighbourBlack(tileXCoordinate + 2, tileYCoordinate):
+            blackNeighboursCount += 1
+
+
+        for i in range(-1, 2, 2):
+            for j in range(-1, 2, 2):
+                if self.isNeighbourBlack(tileXCoordinate + i, tileYCoordinate + j):
+                    blackNeighboursCount += 1
+
+        return blackNeighboursCount
+
+
+    def isNeighbourBlack(self, xCoordinateToCheck, yCoordinateToCheck) -> bool:
+        neighbourCoordinateInDict = (str(xCoordinateToCheck) + "," + str(yCoordinateToCheck))
+        return (neighbourCoordinateInDict in self.currentFloorAlignment and self.currentFloorAlignment[neighbourCoordinateInDict].colour == TileColour.BLACK)
+
+
+    def getNeighbourTiles(self, tile: Tile):
+        neighbourTiles = set()
+
+        neighbourCoordinateInDict = (str(tile.coordinates.x + 2) + "," + str(tile.coordinates.y))
+        if neighbourCoordinateInDict in self.currentFloorAlignment:
+            neighbourTiles.add(self.currentFloorAlignment[neighbourCoordinateInDict])
+        else:
+            neighbourTile = Tile(tile.coordinates.x + 2, tile.coordinates.y)
+            self.currentFloorAlignment[neighbourCoordinateInDict] = neighbourTile
+            neighbourTiles.add(neighbourTile)
+
+        neighbourCoordinateInDict = (str(tile.coordinates.x - 2) + "," + str(tile.coordinates.y))
+        if neighbourCoordinateInDict in self.currentFloorAlignment:
+            neighbourTiles.add(self.currentFloorAlignment[neighbourCoordinateInDict])
+        else:
+            neighbourTile = Tile(tile.coordinates.x - 2, tile.coordinates.y)
+            self.currentFloorAlignment[neighbourCoordinateInDict] = neighbourTile
+            neighbourTiles.add(neighbourTile)
+
+
+        for i in range(-1, 2, 2):
+            for j in range(-1, 2, 2):
+                neighbourCoordinateInDict = (str(tile.coordinates.x + i) + "," + str(tile.coordinates.y + j))
+                if neighbourCoordinateInDict in self.currentFloorAlignment:
+                    neighbourTiles.add(self.currentFloorAlignment[neighbourCoordinateInDict])
+                else:
+                    neighbourTile = Tile(tile.coordinates.x + i, tile.coordinates.y + j)
+                    self.currentFloorAlignment[neighbourCoordinateInDict] = neighbourTile
+                    neighbourTiles.add(neighbourTile)
+
+        assert len(neighbourTiles) == 6
+        return neighbourTiles
+
+    def countBlackNeighbours(self, tile):
+        cnt = 0
+        neighbours = self.getNeighbourTiles(tile)
+        for neighbour in neighbours:
+            if neighbour in self.blackTiles:
+                cnt += 1
+        return cnt
+
+
+    def iterate(self):
+        stack = set()
+        visited = set()
+        newlyBlackTiles: Set = self.blackTiles.copy()
+
+        for tile in self.blackTiles:
+            stack.add(tile)
+            stack.update(self.getNeighbourTiles(tile))
+
+
+        while len(stack) > 0:
+            currentTile = stack.pop()
+            if currentTile in visited:
+                continue
+
+            visited.add(currentTile)
+            blackNeighboursCount = self.countBlackNeighbours(currentTile)
+            if currentTile in self.blackTiles and (blackNeighboursCount == 0 or blackNeighboursCount > 2):
+                newlyBlackTiles.remove(currentTile)
+            elif currentTile not in self.blackTiles and (blackNeighboursCount == 2):
+                newlyBlackTiles.add(currentTile)
+
+
+        self.blackTiles = newlyBlackTiles
+
+
+
 
 
 def getInput(inputFile: str):
@@ -149,17 +277,35 @@ def getInput(inputFile: str):
                     directions.append(NeighbourDirection.EAST)
                 elif line[charPosition] == NeighbourDirection.WEST.value:
                     directions.append(NeighbourDirection.WEST)
+                else:
+                    raise ValueError("Unexpected direction when reading input.", line[charPosition])
 
             directionsCollection.append(directions)
     return directionsCollection
 
 
-dirColl = getInput(INPUT_FILE)   # 396 too high, 371 too low, 380 too high, not 375
+dirColl = getInput(INPUT_FILE)   # 396 too high, 371 too low, 380 too high, not 375,but 373
 
 l = Lobby(dirColl)
 print("all tiles count: ", len(dirColl))
 l.followFlippingDirections()
 print("black tiles count: ", l.getBlackTilesCount())
+
+exhibition = Exhibition(l)
+#print(exhibition.getBlackTilesCount())
+# for k, v in exhibition.currentFloorAlignment.items():
+#     print(k, ":", v.colour)
+
+
+for i in range(100):
+    exhibition.iterate()
+    print(len(exhibition.blackTiles))
+
+# exhibition.getNextFloorAlignment()
+# print(exhibition.currentFloorAlignment)
+# print(exhibition.getBlackTilesCount())
+# for k, v in exhibition.currentFloorAlignment.items():
+#     print(k, ":", v.colour)
 
 #print(l.repeatedVisitCounter)
 #print(len(l.uniqueTiles))
