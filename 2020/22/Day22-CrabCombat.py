@@ -42,7 +42,6 @@ class Combat:
         self._firstPlayer: Player = firstPlayer
         self._secondPlayer: Player = secondPlayer
         self._gameEndResult: Optional[Result] = None
-        # self._currentRoundResult: Optional[Result] = None
 
     def play(self) -> None:
         while self._firstPlayer.getDeck() and self._secondPlayer.getDeck():
@@ -100,10 +99,9 @@ class RecursiveCombat(Combat):
 
         self._gameEndResult = Result.FIRST_PLAYER_WON if self._firstPlayer.getDeck() else Result.SECOND_PLAYER_WON
 
-    def _playSubGame(self, playerOneFirstCard: int, playerTwoFirstCard: int, playerOneDeck=None, playerTwoDeck=None, ) -> Result:
-        if not playerOneDeck and not playerTwoDeck:
-            playerOneDeck = self._firstPlayer.getDeck()
-            playerTwoDeck = self._secondPlayer.getDeck()
+    def _playSubGame(self, playerOneFirstCard: int, playerTwoFirstCard: int) -> Result:
+        playerOneDeck = self._firstPlayer.getDeck()
+        playerTwoDeck = self._secondPlayer.getDeck()
 
         subGame = self._setUpSubGame(playerOneFirstCard, playerTwoFirstCard, playerOneDeck, playerTwoDeck)
         subGame.play()
