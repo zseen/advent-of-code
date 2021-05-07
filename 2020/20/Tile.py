@@ -3,6 +3,7 @@ from typing import List, Set
 
 class Tile:
     def __init__(self, id: str, pixelRows: List[str]):
+        assert pixelRows
         self.id = id
         self._pixelRows = pixelRows
         self._neighborTiles: Set[Tile] = set()
@@ -29,8 +30,6 @@ class Tile:
         return self._buildEdge(0)
 
     def getEdges(self) -> List[str]:
-        if not self._pixelRows:
-            raise ValueError("Problem with getting edges, no pixelRows found in tile.")
         return [self.getRightEdge(), self.getTopEdge(), self.getLeftEdge(), self.getBottomEdge()]
 
     def getNeighborTiles(self) -> Set:
@@ -43,8 +42,6 @@ class Tile:
         return set(neighborsEdges)
 
     def getPixelAtPosition(self, tileRowIdex, tileColumnIndex) -> str:
-        if not self._pixelRows:
-            raise ValueError("No pixelRows found in tile.")
         return self._pixelRows[tileRowIdex][tileColumnIndex]
 
     def getTileEdgeLength(self):
@@ -52,6 +49,4 @@ class Tile:
         return len(self.getTopEdge())
 
     def _buildEdge(self, pixelPosition: int) -> str:
-        if not self._pixelRows:
-            raise ValueError("Problem with building edges, no pixelRows found in tile.")
         return "".join([row[pixelPosition] for row in self._pixelRows])

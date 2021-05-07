@@ -3,7 +3,7 @@ from Tile import Tile
 import PuzzleHelper as PH
 
 
-class TilesFuser:
+class TileFuser:
     def __init__(self, tileEdgeLength):
         self._tileEdgeLength = tileEdgeLength
         self._rowIndex = 0

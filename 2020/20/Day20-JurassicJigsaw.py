@@ -7,7 +7,7 @@ from SeaMonster import SeaMonster
 from Sea import Sea
 from Coordinates import Coordinates
 from TileEdgesRemover import TileEdgesRemover
-from TilesFuser import TilesFuser
+from TileFuser import TileFuser
 
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
@@ -53,10 +53,10 @@ def createTile(rawTileData: str) -> Tile:
 def createSea(puzzleBoard: PH.BoardType) -> List[str]:
     assert puzzleBoard and puzzleBoard[0][0] is not None
     tileEdgeLength = puzzleBoard[0][0].getTileEdgeLength()
-    tilesFuser = TilesFuser(tileEdgeLength)
-    boardWithTilePixelsFusedTogether = tilesFuser.createBoardWithTilePixelsFusedTogether(puzzleBoard)
+    tileFuser = TileFuser(tileEdgeLength)
+    boardWithTilePixelsFusedTogether = tileFuser.createBoardWithTilePixelsFusedTogether(puzzleBoard)
     edgeRemover = TileEdgesRemover(tileEdgeLength)
-    return edgeRemover.removeTileEdgesPixelsFromBoard(boardWithTilePixelsFusedTogether)
+    return edgeRemover.removeTileEdgePixelsFromBoard(boardWithTilePixelsFusedTogether)
 
 
 def createSeaMonster(fileName: str) -> SeaMonster:

@@ -1,13 +1,13 @@
 from typing import List
 from Tile import Tile
-from TilesFuser import TilesFuser
+from TileFuser import TileFuser
 
 
 class TileEdgesRemover:
     def __init__(self, tileSideLength):
         self._tileSideLength = tileSideLength
 
-    def removeTileEdgesPixelsFromBoard(self, boardWithTilePixels: List[str]) -> List[str]:
+    def removeTileEdgePixelsFromBoard(self, boardWithTilePixels: List[str]) -> List[str]:
         if not boardWithTilePixels:
             raise ValueError("Board with pixel rows not received.")
 

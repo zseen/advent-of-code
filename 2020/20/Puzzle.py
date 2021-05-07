@@ -5,8 +5,8 @@ import PuzzleHelper as PH
 
 
 class Puzzle:
-    def __init__(self, _tiles: List[Tile]):
-        self._tiles = _tiles
+    def __init__(self, tiles: List[Tile]):
+        self._tiles = tiles
         self._corners: List[Tile] = []
         self._size = int(math.sqrt(len(self._tiles)))
         self._board: Optional[Tile] = [[None for _ in range(self._size)] for _ in range(self._size)]
