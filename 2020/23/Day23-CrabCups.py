@@ -2,8 +2,8 @@ import unittest
 from typing import List, Set, Dict, Optional
 from copy import deepcopy
 from Profiling import doProfiling
-from Cup import Cup
-from Cups import Cups
+from CupNode import CupNode
+from CupCircularLinkedList import CupCircularLinkedList
 
 TEST_INPUT = "test_input.txt"
 INPUT_FILE = "input.txt"
@@ -11,19 +11,19 @@ INPUT_FILE = "input.txt"
 CUPS_TO_PICK_OUT_COUNT = 3
 ROUNDS_TO_PLAY_PART_ONE = 100
 ROUNDS_TO_PLAY_PART_TWO = 10_000_000
-CUPS_NUM_IN_PART_TWO = 1_000_000
+CUPS_NUM_PART_TWO = 1_000_000
 
-SHOULD_DO_PROFILING = False
+SHOULD_DO_PROFILING = True
 
 
 class CrabCups:
-    def __init__(self, cups: Cups):
+    def __init__(self, cups: CupCircularLinkedList):
         self.cups: Cups = cups
-        self.currentCup: Optional[Cup] = None
-        self.destinationCup: Optional[Cup] = None
+        self.currentCup: Optional[CupNode] = None
+        self.destinationCup: Optional[CupNode] = None
         self.cupsLabels: Set[int] = set()
-        self.cupLabelToCup: Dict[int, Cup] = self._getCupLabelsToCup()
-        self.pickedOutCups: List[Cup] = []
+        self.cupLabelToCup: Dict[int, CupNode] = self._getCupLabelsToCup()
+        self.pickedOutCups: List[CupNode] = []
 
     def play(self) -> None:
         self._findCurrentCup()
@@ -32,69 +32,57 @@ class CrabCups:
         self._putPickedOutCupsNextToDestinationCup()
 
     def _findCurrentCup(self) -> None:
-        assert self.cups
         if self.currentCup:
             self.cups.rotate()
-        self.currentCup = self.cups.headCup
+        self.currentCup = self.cups.getHeadCup()
 
     def _pickOutCupsNextToCurrentCup(self) -> None:
         assert self.currentCup
-        currentCup: Cup = self.currentCup
+        currentCup: CupNode = self.currentCup
 
         for i in range(0, CUPS_TO_PICK_OUT_COUNT):
-            currentCup = currentCup.nextCup
+            currentCup = currentCup.getNextCup()
             self.pickedOutCups.append(currentCup)
-            self.cups.cupsCount -= 1
+            self.cups.removeCup(currentCup)
 
-        self.currentCup.nextCup = currentCup.nextCup
+        #self.currentCup.setNextCup(currentCup.getNextCup())
 
     def _findDestinationCup(self) -> None:
-        possibleDestinationCup = self._findSmallerCupThanCurrentCup()
-        if possibleDestinationCup is not None:
-            self.destinationCup = possibleDestinationCup
-        else:
-            self.destinationCup = self._findNotPickedOutCupWithGreatestLabel()
+        nextSmallerCupLabelCandidate = self.currentCup.label - 1
+        pickedOutCupsLabels = set([cup.label for cup in self.pickedOutCups])
+        while nextSmallerCupLabelCandidate >= 0:
+            if (nextSmallerCupLabelCandidate in self.cupsLabels) and (nextSmallerCupLabelCandidate not in pickedOutCupsLabels):
+                self.destinationCup = self.cupLabelToCup[nextSmallerCupLabelCandidate]
+                break
+            nextSmallerCupLabelCandidate -= 1
+            if nextSmallerCupLabelCandidate <= 0:
+                nextSmallerCupLabelCandidate = len(self.cupsLabels)
 
         assert self.destinationCup
 
     def _putPickedOutCupsNextToDestinationCup(self) -> None:
         assert len(self.pickedOutCups) == CUPS_TO_PICK_OUT_COUNT
 
-        cupToVisitInOriginalCups: Cup = self.destinationCup
-        originalDestinationCupNextCup: Cup = self.destinationCup.nextCup
-        cupToVisitInPickedOutCups: Optional[Cup] = None
+        cupToVisitInOriginalCups = self.destinationCup
+        originalDestinationCupNextCup = self.destinationCup.getNextCup()
+        cupToVisitInPickedOutCups: Optional[CupNode] = None
 
         for i in range(0, CUPS_TO_PICK_OUT_COUNT):
             cupToVisitInPickedOutCups = self.pickedOutCups.pop(0)
-            cupToVisitInOriginalCups.nextCup = cupToVisitInPickedOutCups
-            cupToVisitInOriginalCups = cupToVisitInOriginalCups.nextCup
-            self.cups.cupsCount += 1
+            #cupToVisitInOriginalCups.setNextCup(cupToVisitInPickedOutCups)
+            self.cups.insertCupAfterSpecificCup(cupToVisitInOriginalCups, cupToVisitInPickedOutCups)
+            cupToVisitInOriginalCups = cupToVisitInOriginalCups.getNextCup()
 
-        cupToVisitInPickedOutCups.nextCup = originalDestinationCupNextCup
+        #cupToVisitInPickedOutCups.setNextCup(originalDestinationCupNextCup)
 
-    def _getCupLabelsToCup(self) -> Dict[int, Cup]:
-        assert self.cups
-        labelToCup: Dict[int, Cup] = dict()
-        cupToVisit: Cup = self.cups.headCup
-        for i in range(0, self.cups.cupsCount):
-            labelToCup[cupToVisit.label] = cupToVisit
-            self.cupsLabels.add(cupToVisit.label)
-            cupToVisit = cupToVisit.nextCup
+    def _getCupLabelsToCup(self) -> Dict[int, CupNode]:
+        labelToCup: Dict[int, CupNode] = dict()
+        cupToVisit: CupNode = self.cups.getHeadCup()
+        for cup in self.cups:
+            labelToCup[cup.label] = cup
+            self.cupsLabels.add(cup.label)
+            #cupToVisit = cupToVisit.getNextCup()
         return labelToCup
-
-    def _findSmallerCupThanCurrentCup(self) -> Cup:
-        nextSmallerCupCandidate = self.currentCup.label - 1
-        pickedOutCupsLabels = set([cup.label for cup in self.pickedOutCups])
-        while nextSmallerCupCandidate > 0:
-            if (nextSmallerCupCandidate in self.cupsLabels) and (nextSmallerCupCandidate not in pickedOutCupsLabels):
-                return self.cupLabelToCup[nextSmallerCupCandidate]
-            nextSmallerCupCandidate -= 1
-
-    def _findNotPickedOutCupWithGreatestLabel(self) -> Cup:
-        for i in range(CUPS_TO_PICK_OUT_COUNT):
-            possibleMaxCup = self.cupLabelToCup[len(self.cupsLabels) - i]
-            if possibleMaxCup not in self.pickedOutCups:
-                return possibleMaxCup
 
 
 def getInput(fileName: str) -> List[int]:
@@ -103,9 +91,9 @@ def getInput(fileName: str) -> List[int]:
         return [int(cupLabel) for cupLabel in cupsRawData.strip()]
 
 
-def createCupsFromLabels(cupLabels: List[int]) -> Cups:
-    cups: Cups = Cups()
-    cupsToAdd: List[Cup] = [Cup(label) for label in cupLabels]
+def createCupsFromLabels(cupLabels: List[int]) -> CupCircularLinkedList:
+    cups: CupCircularLinkedList = CupCircularLinkedList()
+    cupsToAdd: List[CupNode] = [CupNode(label) for label in cupLabels]
     for cup in cupsToAdd:
         cups.addCup(cup)
     return cups
@@ -128,9 +116,9 @@ def main():
     crabCups: CrabCups = CrabCups(cups)
     runGame(crabCups, ROUNDS_TO_PLAY_PART_ONE)
     crabCups.cups.rotateUntilDesiredHeadLabel(1)
-    print("".join(map(str, crabCups.cups))[1:]) # "58427369"
+    print("".join(map(str, [cup.getLabel() for cup in crabCups.cups]))[1:]) # "58427369"
 
-    addMoreCupLabelsUntilLimitInclusive(cupLabels, CUPS_NUM_IN_PART_TWO)
+    addMoreCupLabelsUntilLimitInclusive(cupLabels, CUPS_NUM_PART_TWO)
     cups: Cups = createCupsFromLabels(cupLabels)
     crabCups: CrabCups = CrabCups(cups)
     runGame(crabCups, ROUNDS_TO_PLAY_PART_TWO)
@@ -152,15 +140,15 @@ class CrabCupsTester(unittest.TestCase):
         crabCups.cups.rotateUntilDesiredHeadLabel(1)
         self.assertEqual("".join(map(str, crabCups.cups))[1:], "67384529")
 
-    def test_moreCupsAndRounds_twoCupsLabelsAfterCupOneMultipledTogetherReturned(self):
-        addMoreCupLabelsUntilLimitInclusive(self.cupLabels, CUPS_NUM_IN_PART_TWO)
-        cups: Cups = createCupsFromLabels(self.cupLabels)
-        crabCups: CrabCups = CrabCups(cups)
-        runGame(crabCups, ROUNDS_TO_PLAY_PART_TWO)
-        crabCups.cups.rotateUntilDesiredHeadLabel(1)
-        self.assertEqual(crabCups.cupLabelToCup[1].nextCup.label * crabCups.cupLabelToCup[1].nextCup.nextCup.label, 149245887792)
+    # def test_moreCupsAndRounds_twoCupsLabelsAfterCupOneMultipledTogetherReturned(self):
+    #     addMoreCupLabelsUntilLimitInclusive(self.cupLabels, CUPS_NUM_PART_TWO)
+    #     cups: Cups = createCupsFromLabels(self.cupLabels)
+    #     crabCups: CrabCups = CrabCups(cups)
+    #     runGame(crabCups, ROUNDS_TO_PLAY_PART_TWO)
+    #     crabCups.cups.rotateUntilDesiredHeadLabel(1)
+    #     self.assertEqual(crabCups.cupLabelToCup[1].nextCup.label * crabCups.cupLabelToCup[1].nextCup.nextCup.label, 149245887792)
 
 
 if __name__ == '__main__':
-    # main()
+    #main()
     unittest.main()
