@@ -8,15 +8,8 @@ class CupCircularLinkedList:
         self._tailCup: Optional[CupNode] = None
         self._cupsCount: int = 0
 
-
     def getHeadCup(self) -> CupNode:
         return self._headCup
-
-    def getTailCup(self) -> CupNode:
-        return self._tailCup
-
-    def getCupsCount(self) -> CupNode:
-        return self._cupsCount
 
     def __iter__(self) -> CupNode:
         if self._headCup is None:
@@ -45,14 +38,12 @@ class CupCircularLinkedList:
         self._cupsCount -= 1
 
     def insertCupAfterSpecificCup(self, cupToInsertAfter: CupNode, cupToInsert: CupNode) -> None:
-        currentCupToInsertNextCup = cupToInsertAfter.getNextCup()
-
+        currentCupToInsertAfterNextCup = cupToInsertAfter.getNextCup()
         cupToInsertAfter.setNextCup(cupToInsert)
         cupToInsert.setPreviousCup(cupToInsertAfter)
-        currentCupToInsertNextCup.setPreviousCup(cupToInsert)
-        cupToInsert.setNextCup(currentCupToInsertNextCup)
+        currentCupToInsertAfterNextCup.setPreviousCup(cupToInsert)
+        cupToInsert.setNextCup(currentCupToInsertAfterNextCup)
         self._cupsCount += 1
-
 
     def rotateUntilDesiredHeadLabel(self, desiredHeadLabel: int) -> None:
         for i in range(self._cupsCount):
