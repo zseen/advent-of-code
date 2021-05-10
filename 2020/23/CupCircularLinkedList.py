@@ -3,7 +3,7 @@ from CupNode import CupNode
 
 
 class CupCircularLinkedList:
-    def __init__(self):
+    def __init__(self) -> None:
         self._headCup: Optional[CupNode] = None
         self._tailCup: Optional[CupNode] = None
         self._cupsCount: int = 0

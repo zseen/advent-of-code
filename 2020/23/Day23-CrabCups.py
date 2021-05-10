@@ -1,6 +1,5 @@
 import unittest
 from typing import List, Set, Dict, Optional
-from copy import deepcopy
 from Profiling import doProfiling
 from CupNode import CupNode
 from CupCircularLinkedList import CupCircularLinkedList
