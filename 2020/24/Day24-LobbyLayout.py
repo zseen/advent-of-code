@@ -9,7 +9,7 @@ import InputHandler
 INPUT_FILE = "input.txt"
 TEST_INPUT_FILE = "test_input.txt"
 
-EXECUTION_REPETITION = 100
+NUM_EXECUTION_REPETITION = 100
 
 
 class Lobby:
@@ -82,14 +82,11 @@ class Exhibition:
         nextBlackTiles: Set[Tile] = self._blackTiles.copy()
 
         while len(tilesToVisit) > 0:
-            _currentTile = tilesToVisit.pop()
-            if _currentTile in visitedTiles:
-                continue
-
-            visitedTiles.add(_currentTile)
-            currentTileBlackNeighboursCount = self._countBlackNeighbours(_currentTile)
-            self._flipTileAccordingToBlackNeighboursCount(_currentTile, currentTileBlackNeighboursCount)
-            self._addBlackTileOrRemoveWhiteTileInBlackTilesCollection(_currentTile, nextBlackTiles)
+            currentTile = tilesToVisit.pop()
+            visitedTiles.add(currentTile)
+            currentTileBlackNeighboursCount = self._countBlackNeighbours(currentTile)
+            self._flipTileAccordingToBlackNeighboursCount(currentTile, currentTileBlackNeighboursCount)
+            self._addBlackTileOrRemoveWhiteTileInBlackTilesCollection(currentTile, nextBlackTiles)
 
         self._blackTiles = nextBlackTiles
 
@@ -148,7 +145,7 @@ def main():
     print(lobby.getBlackTilesCount())  # 373
 
     exhibition = Exhibition(lobby.getCoordinatesToTile())
-    for _ in range(EXECUTION_REPETITION):
+    for _ in range(NUM_EXECUTION_REPETITION):
         exhibition.executeIteration()
     print(exhibition.getBlackTilesCount())  # 3917
 
@@ -166,7 +163,7 @@ class LobbyAndExhibitionTester(unittest.TestCase):
         lobby = Lobby(self.directionsCollection)
         lobby.followAllDirections()
         exhibition = Exhibition(lobby.getCoordinatesToTile())
-        for _ in range(EXECUTION_REPETITION):
+        for _ in range(NUM_EXECUTION_REPETITION):
             exhibition.executeIteration()
 
         self.assertEqual(2208, exhibition.getBlackTilesCount())
