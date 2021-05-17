@@ -1,8 +1,6 @@
 import unittest
-from typing import List, Set, Dict, Tuple
+from typing import List, Set
 from Direction import Direction
-from Tile import Tile
-from TileColour import TileColour
 from Coordinates import Coordinates
 import InputHandler
 
@@ -12,161 +10,138 @@ TEST_INPUT_FILE = "test_input.txt"
 NUM_EXECUTION_REPETITION = 100
 
 
-class Lobby:
-    def __init__(self, directionsCollection: List[List[Direction]]):
-        self._directionsCollection = directionsCollection
-        self._coordinatesToTile: Dict[Tuple, Tile] = dict()
-        self._currentTile = None
+class PathsProcessor:
+    def __init__(self, destinationPaths: List[List[Direction]]) -> None:
+        self._destinationPaths = destinationPaths
+        self._blackTilesCoordinates: Set[Coordinates] = set()
+        self._currentCoordinates: Coordinates = None
 
     def getBlackTilesCount(self) -> int:
-        return sum([1 for tile in self._coordinatesToTile.values() if tile.colour == TileColour.BLACK])
+        return len(self._blackTilesCoordinates)
 
-    def getCoordinatesToTile(self) -> Dict[Tuple, Tile]:
-        return self._coordinatesToTile
+    def getBlackTilesCoordinates(self) -> Set[Coordinates]:
+        return self._blackTilesCoordinates
 
-    def followAllDirections(self) -> None:
-        for directions in self._directionsCollection:
-            self._followDirections(directions)
+    def processAllPaths(self) -> None:
+        for destinationPath in self._destinationPaths:
+            self._followDirections(destinationPath)
 
-    def _followDirections(self, directions: List[Direction]) -> None:
-        self._currentTile = Tile(0, 0)
+    def _followDirections(self, destinationPath: List[Direction]) -> None:
+        self._currentCoordinates = Coordinates(0, 0)
 
-        for direction in directions:
+        for direction in destinationPath:
             self._moveToTileInDirection(direction)
 
-        self._setCurrentTile()
-        self._flipCurrentTile()
+        self._processNewTileColor()
 
     def _moveToTileInDirection(self, direction: Direction) -> None:
         if direction == Direction.WEST:
-            self._currentTile = Tile(self._currentTile.coordinates.x - 2, self._currentTile.coordinates.y)
+            self._currentCoordinates = Coordinates(self._currentCoordinates.x - 2, self._currentCoordinates.y)
         elif direction == Direction.EAST:
-            self._currentTile = Tile(self._currentTile.coordinates.x + 2, self._currentTile.coordinates.y)
+            self._currentCoordinates = Coordinates(self._currentCoordinates.x + 2, self._currentCoordinates.y)
         elif direction == Direction.NORTHWEST:
-            self._currentTile = Tile(self._currentTile.coordinates.x - 1, self._currentTile.coordinates.y + 1)
+            self._currentCoordinates = Coordinates(self._currentCoordinates.x - 1, self._currentCoordinates.y + 1)
         elif direction == Direction.SOUTHWEST:
-            self._currentTile = Tile(self._currentTile.coordinates.x - 1, self._currentTile.coordinates.y - 1)
+            self._currentCoordinates = Coordinates(self._currentCoordinates.x - 1, self._currentCoordinates.y - 1)
         elif direction == Direction.NORTHEAST:
-            self._currentTile = Tile(self._currentTile.coordinates.x + 1, self._currentTile.coordinates.y + 1)
+            self._currentCoordinates = Coordinates(self._currentCoordinates.x + 1, self._currentCoordinates.y + 1)
         elif direction == Direction.SOUTHEAST:
-            self._currentTile = Tile(self._currentTile.coordinates.x + 1, self._currentTile.coordinates.y - 1)
+            self._currentCoordinates = Coordinates(self._currentCoordinates.x + 1, self._currentCoordinates.y - 1)
         else:
             raise ValueError("Unknown direction to follow.")
 
-    def _setCurrentTile(self) -> None:
-        currentTileCoordinates: Tuple[int, int] = (self._currentTile.coordinates.x, self._currentTile.coordinates.y)
-        if currentTileCoordinates not in self._coordinatesToTile:
-            self._coordinatesToTile[currentTileCoordinates] = self._currentTile
-        self._currentTile = self._coordinatesToTile[currentTileCoordinates]
-
-    def _flipCurrentTile(self) -> None:
-        if self._currentTile.colour == TileColour.WHITE:
-            self._currentTile.colour = TileColour.BLACK
-        elif self._currentTile.colour == TileColour.BLACK:
-            self._currentTile.colour = TileColour.WHITE
+    def _processNewTileColor(self) -> None:
+        if self._currentCoordinates in self._blackTilesCoordinates:
+            self._blackTilesCoordinates.remove(self._currentCoordinates)
         else:
-            raise ValueError("Unkown tile colour: ", self._currentTile.colour)
+            self._blackTilesCoordinates.add(self._currentCoordinates)
 
 
-class Exhibition:
-    def __init__(self, coordinatesToTile: Dict[Tuple, Tile]):
-        self._coordinatesToTile = coordinatesToTile
-        self._blackTiles: Set[Tile] = set([tile for tile in self._coordinatesToTile.values() if tile.colour == TileColour.BLACK])
+class ExhibitionArranger:
+    def __init__(self, initialBlackTilesCoordinates: Set[Coordinates]):
+        self._blackTilesCoordinates: Set[Coordinates] = initialBlackTilesCoordinates
 
     def getBlackTilesCount(self) -> int:
-        return len(self._blackTiles)
+        return len(self._blackTilesCoordinates)
 
     def executeIteration(self) -> None:
-        tilesToVisit = self._findTilesToVisit()
-        visitedTiles: Set[Tile] = set()
-        nextBlackTiles: Set[Tile] = self._blackTiles.copy()
+        tilesCoordinatesToVisit = self._findTilesCoordinatesToVisit()
+        visitedTilesCoordinates: Set[Coordinates] = set()
+        nextBlackTilesCoordinates: Set[Coordinates] = self._blackTilesCoordinates.copy()
 
-        while len(tilesToVisit) > 0:
-            currentTile = tilesToVisit.pop()
-            visitedTiles.add(currentTile)
-            currentTileBlackNeighboursCount = self._countBlackNeighbours(currentTile)
-            self._flipTileAccordingToBlackNeighboursCount(currentTile, currentTileBlackNeighboursCount)
-            self._addBlackTileOrRemoveWhiteTileInBlackTilesCollection(currentTile, nextBlackTiles)
+        while len(tilesCoordinatesToVisit) > 0:
+            currentTileCoordinates = tilesCoordinatesToVisit.pop()
+            visitedTilesCoordinates.add(currentTileCoordinates)
+            currentTileBlackNeighborsCount = self._countBlackNeighbors(currentTileCoordinates)
+            self._processNewTileColor(currentTileCoordinates, currentTileBlackNeighborsCount, nextBlackTilesCoordinates)
 
-        self._blackTiles = nextBlackTiles
+        self._blackTilesCoordinates = nextBlackTilesCoordinates
 
-    def _findTilesToVisit(self) -> Set[Tile]:
-        tilesToVisit: Set[Tile] = set()
-        for tile in self._blackTiles:
-            tilesToVisit.add(tile)
-            neighbourTiles = self._getNeighbourTiles(tile)
-            tilesToVisit.update(neighbourTiles)
-        return tilesToVisit
+    def _findTilesCoordinatesToVisit(self) -> Set[Coordinates]:
+        tilesCoordinatesToVisit: Set[Coordinates] = set()
+        for blackTileCoordinates in self._blackTilesCoordinates:
+            tilesCoordinatesToVisit.add(blackTileCoordinates)
+            neighborTilesCoordinates = self._getNeighborTilesCoordinates(blackTileCoordinates)
+            tilesCoordinatesToVisit.update(neighborTilesCoordinates)
+        return tilesCoordinatesToVisit
 
-    def _getNeighbourTiles(self, tile: Tile) -> Set[Tile]:
-        neighbourTiles: Set[Tile] = set()
+    def _getNeighborTilesCoordinates(self, currentTileCoordinates: Coordinates) -> Set[Coordinates]:
+        neighborTilesCoordinates: Set[Coordinates] = set()
 
-        neighbourTiles.add(self._retrieveNeighbour(tile, -2, 0))
-        neighbourTiles.add(self._retrieveNeighbour(tile, 2, 0))
+        neighborTilesCoordinates.add(self._retrieveNeighbor(currentTileCoordinates, xCoordinateOffset=-2, yCoordinateOffset=0))
+        neighborTilesCoordinates.add(self._retrieveNeighbor(currentTileCoordinates, xCoordinateOffset=2, yCoordinateOffset=0))
 
-        for i in range(-1, 2, 2):
-            for j in range(-1, 2, 2):
-                neighbourTiles.add(self._retrieveNeighbour(tile, i, j))
+        for xCoordinateOffset in range(-1, 2, 2):
+            for yCoordinateOffset in range(-1, 2, 2):
+                neighborTilesCoordinates.add(self._retrieveNeighbor(currentTileCoordinates, xCoordinateOffset, yCoordinateOffset))
 
-        assert len(neighbourTiles) == 6
-        return neighbourTiles
+        assert len(neighborTilesCoordinates) == 6
+        return neighborTilesCoordinates
 
-    def _retrieveNeighbour(self, tile: Tile, xCoordinateOffset: int, yCoordinateOffset: int) -> Tile:
-        coordinatesForNeighbour: Tuple[int, int] = (tile.coordinates.x + xCoordinateOffset, tile.coordinates.y + yCoordinateOffset)
-        if coordinatesForNeighbour not in self._coordinatesToTile:
-            self._coordinatesToTile[coordinatesForNeighbour] = Tile(coordinatesForNeighbour[0], coordinatesForNeighbour[1])
+    def _retrieveNeighbor(self, currentTileCoordinates: Coordinates, xCoordinateOffset: int, yCoordinateOffset: int) -> Coordinates:
+        return Coordinates(currentTileCoordinates.x + xCoordinateOffset, currentTileCoordinates.y + yCoordinateOffset)
 
-        return self._coordinatesToTile[coordinatesForNeighbour]
+    def _countBlackNeighbors(self, tileCoordinates: Coordinates) -> int:
+        return sum([1 for neighborTileCoordinates in self._getNeighborTilesCoordinates(tileCoordinates) if
+                    neighborTileCoordinates in self._blackTilesCoordinates])
 
-    def _countBlackNeighbours(self, tile: Tile) -> int:
-        return sum([1 for neighbourTile in self._getNeighbourTiles(tile) if neighbourTile in self._blackTiles])
-
-    def _flipTileAccordingToBlackNeighboursCount(self, tile: Tile, blackNeighboursCount: int) -> None:
-        if tile.colour == TileColour.WHITE:
-            if blackNeighboursCount == 2:
-                tile.colour = TileColour.BLACK
-        elif tile.colour == TileColour.BLACK:
-            if blackNeighboursCount > 2 or blackNeighboursCount == 0:
-                tile.colour = TileColour.WHITE
+    def _processNewTileColor(self, tileCoordinates: Coordinates, blackNeighborsCount: int, blackTilesCollection: Set[Coordinates]) -> None:
+        if tileCoordinates not in blackTilesCollection:
+            if blackNeighborsCount == 2:
+                blackTilesCollection.add(tileCoordinates)
         else:
-            raise ValueError("Unknown tile colour: ", tile.colour)
+            if blackNeighborsCount > 2 or blackNeighborsCount == 0:
+                blackTilesCollection.remove(tileCoordinates)
 
-    def _addBlackTileOrRemoveWhiteTileInBlackTilesCollection(self, tile: Tile, blackTilesCollection: Set[Tile]) -> None:
-        if tile.colour == TileColour.BLACK:
-            blackTilesCollection.add(tile)
-        elif tile.colour == TileColour.WHITE and tile in blackTilesCollection:
-            blackTilesCollection.remove(tile)
+
+def getFinalBlackTilesCountInExhibition(destinationPaths: List[List[Direction]], iterationCount: int) -> int:
+    pathsProcessor = PathsProcessor(destinationPaths)
+    pathsProcessor.processAllPaths()
+    exhibitionArranger = ExhibitionArranger(pathsProcessor.getBlackTilesCoordinates())
+    for _ in range(iterationCount):
+        exhibitionArranger.executeIteration()
+    return exhibitionArranger.getBlackTilesCount()
 
 
 def main():
-    directionsCollection = InputHandler.getInput(INPUT_FILE)
-    lobby = Lobby(directionsCollection)
-    lobby.followAllDirections()
-    print(lobby.getBlackTilesCount())  # 373
-
-    exhibition = Exhibition(lobby.getCoordinatesToTile())
-    for _ in range(NUM_EXECUTION_REPETITION):
-        exhibition.executeIteration()
-    print(exhibition.getBlackTilesCount())  # 3917
+    destinationPaths = InputHandler.getInput(INPUT_FILE)
+    pathsProcessor = PathsProcessor(destinationPaths)
+    pathsProcessor.processAllPaths()
+    print(pathsProcessor.getBlackTilesCount())  # 373
+    print(getFinalBlackTilesCountInExhibition(destinationPaths, NUM_EXECUTION_REPETITION))  # 3917
 
 
-class LobbyAndExhibitionTester(unittest.TestCase):
+class PathsProcessorAndExhibitionArrangerTester(unittest.TestCase):
     def setUp(self) -> None:
-        self.directionsCollection = InputHandler.getInput(TEST_INPUT_FILE)
+        self.destinationPaths = InputHandler.getInput(TEST_INPUT_FILE)
 
-    def test_getBlackTilesCount_lobby_correctCountReturned(self):
-        lobby = Lobby(self.directionsCollection)
-        lobby.followAllDirections()
-        self.assertEqual(10, lobby.getBlackTilesCount())
+    def test_getBlackTilesCount_pathsProcessor_correctCountReturned(self):
+        pathsProcessor = PathsProcessor(self.destinationPaths)
+        pathsProcessor.processAllPaths()
+        self.assertEqual(10, pathsProcessor.getBlackTilesCount())
 
     def test_getBlackTilesCount_exhibition_correctCountReturned(self):
-        lobby = Lobby(self.directionsCollection)
-        lobby.followAllDirections()
-        exhibition = Exhibition(lobby.getCoordinatesToTile())
-        for _ in range(NUM_EXECUTION_REPETITION):
-            exhibition.executeIteration()
-
-        self.assertEqual(2208, exhibition.getBlackTilesCount())
+        self.assertEqual(2208, getFinalBlackTilesCountInExhibition(self.destinationPaths, NUM_EXECUTION_REPETITION))
 
 
 if __name__ == '__main__':

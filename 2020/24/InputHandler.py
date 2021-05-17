@@ -11,33 +11,37 @@ def getInput(inputFile: str) -> List[List[Direction]]:
             directions: List[Direction] = []
             charPosition = 0
             while charPosition < len(line) - 1:
-                if line[charPosition] + line[charPosition + 1] == Direction.NORTHEAST.value:
+                currentChar = line[charPosition]
+                nextChar = line[charPosition + 1]
+                if currentChar + nextChar == Direction.NORTHEAST.value:
                     directions.append(Direction.NORTHEAST)
-                    charPosition += 1
-                elif line[charPosition] + line[charPosition + 1] == Direction.NORTHWEST.value:
+                    charPosition += 2
+                elif currentChar + nextChar == Direction.NORTHWEST.value:
                     directions.append(Direction.NORTHWEST)
-                    charPosition += 1
-                elif line[charPosition] + line[charPosition + 1] == Direction.SOUTHEAST.value:
+                    charPosition += 2
+                elif currentChar + nextChar == Direction.SOUTHEAST.value:
                     directions.append(Direction.SOUTHEAST)
-                    charPosition += 1
-                elif line[charPosition] + line[charPosition + 1] == Direction.SOUTHWEST.value:
+                    charPosition += 2
+                elif currentChar + nextChar == Direction.SOUTHWEST.value:
                     directions.append(Direction.SOUTHWEST)
-                    charPosition += 1
-                elif line[charPosition] == Direction.EAST.value:
+                    charPosition += 2
+                elif currentChar == Direction.EAST.value:
                     directions.append(Direction.EAST)
-                elif line[charPosition] == Direction.WEST.value:
+                    charPosition += 1
+                elif currentChar == Direction.WEST.value:
                     directions.append(Direction.WEST)
+                    charPosition += 1
                 else:
-                    raise ValueError("Unexpected direction when reading input.", line[charPosition])
-                charPosition += 1
+                    raise ValueError("Unexpected direction when reading input.", currentChar)
 
             if charPosition == len(line) - 1:
-                if line[charPosition] == Direction.EAST.value:
+                currentChar = line[charPosition]
+                if currentChar == Direction.EAST.value:
                     directions.append(Direction.EAST)
-                elif line[charPosition] == Direction.WEST.value:
+                elif currentChar == Direction.WEST.value:
                     directions.append(Direction.WEST)
                 else:
-                    raise ValueError("Unexpected direction when reading input.", line[charPosition])
+                    raise ValueError("Unexpected direction when reading input.", currentChar)
 
             directionsCollection.append(directions)
 
