@@ -82,22 +82,27 @@ def getInput(inputFile):
 
 
 def createBagFromLine(line: List):
+    # Line format should be like "wavy maroon bags contain 2 dull magenta bags, 3 dark red bags, 5 dull green bags, 4 bright turquoise bags."
+    # Format: two adjectives (to describe the main bag's color) + word "bags" + word "contain" + numeral quantity of inside bags + two adjectives (for these inside bags' color) + word "bags"
+    # More inside bags could be mentioned in the same sentence, they all have the above mentioned description format
+
+    if len(line) < 3:
+        raise ValueError("Invalid line format - line is too short.")
+
     mainBagColor = " ".join(line[0:2])
     mainBag = Bag(mainBagColor)
+
+    assert "contain" in line
+    mainBagContents = line[line.index("contain") + 1:]
+
     bagsInsideMainBagColorToQuantity = []
-    quantity = 0
-    color = None
-    for i in range(4, len(line)):
-        if i % 4 == 0:
-            if line[i] == "no":
-                quantity = 0
-            else:
-                quantity = int(line[i])
-        elif i % 4 == 1:
-            color = " ".join(line[i:i + 2])
-        if color and quantity:
-            bagsInsideMainBagColorToQuantity.append({color: quantity})
-        color = None
+    for i in range(0, len(mainBagContents) - 3, 4):
+        if not mainBagContents[i].isnumeric():
+            break
+
+        quantity = int(mainBagContents[i])
+        color = " ".join(mainBagContents[i + 1: i + 3])
+        bagsInsideMainBagColorToQuantity.append({color: quantity})
 
     mainBag.content = bagsInsideMainBagColorToQuantity
     return mainBag
