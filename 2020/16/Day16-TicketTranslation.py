@@ -111,22 +111,30 @@ def createTextSectionsFromInput(inputFile: str) -> List[List[str]]:
 
 def parseTextSections(textSections: List[List[str]]) -> Tuple[
     TrainPropertiesToValuesType, TicketType, NearbyTicketsType]:
+    allTrainPropertiesToValues = parsePropertiesTextSection(textSections[0])
+    myTicket, nearbyTickets = parseTicketsTextSections(textSections[1:])
+    return allTrainPropertiesToValues, myTicket, nearbyTickets
+
+
+def parsePropertiesTextSection(propertiesTextSection: List[str]) -> TrainPropertiesToValuesType:
     allTrainPropertiesToValues = []
-    for trainProperty in textSections[0]:
+    for trainProperty in propertiesTextSection:
         trainProperty = trainProperty.split(": ")
         propertyDataFull: List[int] = extractNumList(createTicketValuesFromDataRangeString(trainProperty[1]))
         propertyToValidDataRange = {trainProperty[0]: propertyDataFull}
         allTrainPropertiesToValues.append(propertyToValidDataRange)
+    return allTrainPropertiesToValues
 
-    myTicket = createTicketValuesFromDataRangeString(textSections[1][1])
 
-    nearbyTickets = [createTicketValuesFromDataRangeString(ticket) for ticket in textSections[2][1:]]
+def parseTicketsTextSections(ticketsTextSections: List[List[str]]) -> Tuple[TicketType, NearbyTicketsType]:
+    myTicket = createTicketValuesFromDataRangeString(ticketsTextSections[0][1])
+
+    nearbyTickets = [createTicketValuesFromDataRangeString(ticket) for ticket in ticketsTextSections[1][1:]]
     nearbyTickets.append(myTicket)
+    return myTicket, nearbyTickets
 
-    return allTrainPropertiesToValues, myTicket, nearbyTickets
 
-
-def extractNumList(numList) -> List[int]:
+def extractNumList(numList: List[int]) -> List[int]:
     if len(numList) != 4:
         raise ValueError("Double check the input format for train properties.")
 
