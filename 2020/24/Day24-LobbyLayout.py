@@ -69,8 +69,7 @@ class ExhibitionArranger:
         visitedTilesCoordinates: Set[Coordinates] = set()
         nextBlackTilesCoordinates: Set[Coordinates] = self._blackTilesCoordinates.copy()
 
-        while len(tilesCoordinatesToVisit) > 0:
-            currentTileCoordinates = tilesCoordinatesToVisit.pop()
+        for currentTileCoordinates in tilesCoordinatesToVisit:
             visitedTilesCoordinates.add(currentTileCoordinates)
             currentTileBlackNeighborsCount = self._countBlackNeighbors(currentTileCoordinates)
             self._processNewTileColor(currentTileCoordinates, currentTileBlackNeighborsCount, nextBlackTilesCoordinates)
@@ -88,18 +87,15 @@ class ExhibitionArranger:
     def _getNeighborTilesCoordinates(self, currentTileCoordinates: Coordinates) -> Set[Coordinates]:
         neighborTilesCoordinates: Set[Coordinates] = set()
 
-        neighborTilesCoordinates.add(self._retrieveNeighbor(currentTileCoordinates, xCoordinateOffset=-2, yCoordinateOffset=0))
-        neighborTilesCoordinates.add(self._retrieveNeighbor(currentTileCoordinates, xCoordinateOffset=2, yCoordinateOffset=0))
+        neighborTilesCoordinates.add(Coordinates(currentTileCoordinates.x - 2, currentTileCoordinates.y + 0))
+        neighborTilesCoordinates.add(Coordinates(currentTileCoordinates.x + 2, currentTileCoordinates.y + 0))
 
         for xCoordinateOffset in range(-1, 2, 2):
             for yCoordinateOffset in range(-1, 2, 2):
-                neighborTilesCoordinates.add(self._retrieveNeighbor(currentTileCoordinates, xCoordinateOffset, yCoordinateOffset))
+                neighborTilesCoordinates.add(Coordinates(currentTileCoordinates.x + xCoordinateOffset, currentTileCoordinates.y + yCoordinateOffset))
 
         assert len(neighborTilesCoordinates) == 6
         return neighborTilesCoordinates
-
-    def _retrieveNeighbor(self, currentTileCoordinates: Coordinates, xCoordinateOffset: int, yCoordinateOffset: int) -> Coordinates:
-        return Coordinates(currentTileCoordinates.x + xCoordinateOffset, currentTileCoordinates.y + yCoordinateOffset)
 
     def _countBlackNeighbors(self, tileCoordinates: Coordinates) -> int:
         return sum([1 for neighborTileCoordinates in self._getNeighborTilesCoordinates(tileCoordinates) if
