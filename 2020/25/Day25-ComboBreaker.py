@@ -11,20 +11,6 @@ SUBJECT_NUMBER = 7
 class DeviceEncrypter:
     def __init__(self, publicKey: int) -> None:
         self._publicKey = publicKey
-        self._loopSize = self.calculateLoopSize()
-        self._encryptionKey: Optional[int] = None
-
-    def getPublicKey(self) -> int:
-        return self._publicKey
-
-    def getLoopSize(self) -> int:
-        return self._loopSize
-
-    def getEncryptionKey(self) -> int:
-        if self._encryptionKey is None:
-            raise ValueError("Encryption key not determined yet.")
-
-        return self._encryptionKey
 
     def calculateLoopSize(self) -> int:
         transformedNumber = 1
@@ -35,12 +21,9 @@ class DeviceEncrypter:
                 return loopSize
             loopSize += 1
 
-    def calculateEncryptionKey(self, otherDeviceLoopSize: int) -> None:
-        self._encryptionKey = self._generateTransformedNumberNtimes(otherDeviceLoopSize)
-
-    def _generateTransformedNumberNtimes(self, loopSize: int) -> int:
+    def calculateEncryptionKey(self, otherDeviceLoopSize: int) -> int:
         transformedNumber = 1
-        for _ in range(loopSize):
+        for _ in range(otherDeviceLoopSize):
             transformedNumber = self._transformNumber(transformedNumber, self._publicKey)
         return transformedNumber
 
@@ -61,14 +44,7 @@ def main():
     cardPublicKey, doorPublicKey = getInput(INPUT_FILE)
     card = DeviceEncrypter(cardPublicKey)
     door = DeviceEncrypter(doorPublicKey)
-
-    print(card.getLoopSize())  # 397860
-    print(door.getLoopSize())  # 16774995
-
-    card.calculateEncryptionKey(door.getLoopSize())
-    print(card.getEncryptionKey())  # 16311885 (equal to the door's encryption key)
-    door.calculateEncryptionKey(card.getLoopSize())
-    print(door.getEncryptionKey())  # 16311885 (equal to the card's encryption key)
+    print(door.calculateEncryptionKey(card.calculateLoopSize()))  # 16311885 (equal to the card's encryption key)
 
 
 class ComboBreakerTester(unittest.TestCase):
@@ -78,14 +54,14 @@ class ComboBreakerTester(unittest.TestCase):
         self.door = DeviceEncrypter(doorPublicKey)
 
     def test_calculateLoopSize_forCardAndDoor_calculationCorrect(self):
-        self.assertEqual(8, self.card.getLoopSize())
-        self.assertEqual(11, self.door.getLoopSize())
+        self.assertEqual(8, self.card.calculateLoopSize())
+        self.assertEqual(11, self.door.calculateLoopSize())
 
     def test_calculateEncryptionKey_forCarAndDoor_equalAndCorrectResultReturned(self):
-        self.card.calculateEncryptionKey(self.door.getLoopSize())
-        self.door.calculateEncryptionKey(self.card.getLoopSize())
-        self.assertEqual(self.card.getEncryptionKey(), self.door.getEncryptionKey())
-        self.assertEqual(14897079, self.card.getEncryptionKey())
+        cardLoopSize = self.card.calculateLoopSize()
+        doorLoopSize = self.door.calculateLoopSize()
+        self.assertEqual(self.card.calculateEncryptionKey(doorLoopSize), self.door.calculateEncryptionKey(cardLoopSize))
+        self.assertEqual(14897079, self.card.calculateEncryptionKey(doorLoopSize))
 
 
 if __name__ == '__main__':
