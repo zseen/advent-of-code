@@ -1,6 +1,7 @@
 import unittest
 from typing import List, Dict, Tuple
 from enum import Enum
+import re
 
 INPUT_FILE = "input.txt"
 TEST_INPUT = "test_input.txt"
@@ -118,24 +119,24 @@ class MaskingInstructionExecutor:
             self._memory[maskedMemoryItem.memoryAddress] = maskedMemoryItem.value
 
 
-def getAllMasksToMemoryItems(inputFile: str):
+def getAllMasksToMemoryItems(inputFile: str) -> Dict[str, List[MemoryItem]]:
     allMaskingData: Dict[str, List[MemoryItem]] = {}
     with open(inputFile, "r") as inputFile:
-        lines = inputFile.readlines()
-        for line in lines:
-            line = line.strip("\n")
-            line = line.split(" = ")
-            if len(line) <= 1:
-                raise ValueError("Double check input format.")
+        lines = inputFile.read()
+        lines = lines.split("mask = ")
 
-            if line[0] == "mask":
-                mask = line[1].strip("\n")
-                allMaskingData[mask] = []
-            else:
-                memoryAddressDigits = [char for char in line[0] if char.isdigit()]
-                memoryAddress = int("".join(memoryAddressDigits))
-                value = int(line[1].strip("\n"))
-                allMaskingData[mask].append((MemoryItem(memoryAddress, value)))
+        allMasksAndMemoryItemsRaw = [item.strip("\n").split("\n") for item in lines][1:]
+        for masksAndMemoryItems in allMasksAndMemoryItemsRaw:
+            assert len(masksAndMemoryItems) > 1
+            mask = masksAndMemoryItems[0]
+            correspondingMemoryItems = []
+            for memoryAddressAndValue in masksAndMemoryItems[1:]:
+                memoryAddressAndValue = memoryAddressAndValue.split(" = ")
+                assert len(memoryAddressAndValue) > 1
+                memoryAddress = int("".join([char for char in memoryAddressAndValue[0] if char.isdigit()]))
+                values = int(memoryAddressAndValue[1])
+                correspondingMemoryItems.append(MemoryItem(memoryAddress, values))
+            allMaskingData[mask] = correspondingMemoryItems
 
     return allMaskingData
 
