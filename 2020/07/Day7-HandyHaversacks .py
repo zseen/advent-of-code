@@ -51,12 +51,12 @@ class BagAnalyzer:
                 allBagsCount += self._countBagsInsideBag(nextBag, bagQuantity * quantity)
         return allBagsCount
 
-    def _getBagsContainingTargetDirectly(self, targetBagColor: str) -> List[Bag]:
-        bagsContainingTargetDirectly = []
+    def _getBagsContainingTargetDirectly(self, targetBagColor: str) -> Set[Bag]:
+        bagsContainingTargetDirectly = set()
         for bag in self.allBagsToContent:
             for bagColors in bag.content:
                 if targetBagColor in bagColors:
-                    bagsContainingTargetDirectly.append(bag)
+                    bagsContainingTargetDirectly.add(bag)
         return bagsContainingTargetDirectly
 
     def _findAllContentBagColors(self) -> Set[str]:
@@ -68,7 +68,7 @@ class BagAnalyzer:
         return allBagColors
 
     def _getAllBagsContainingTargetColoredBagRecursively(self, targetColor: str) -> Set[Bag]:
-        bagsContainingTargetDirectly: List[Bag] = self._getBagsContainingTargetDirectly(targetColor)
+        bagsContainingTargetDirectly: Set[Bag] = self._getBagsContainingTargetDirectly(targetColor)
 
         bagsContainingTargetBagRecursively = set(bagsContainingTargetDirectly)
         bagsToVisit = deque()
