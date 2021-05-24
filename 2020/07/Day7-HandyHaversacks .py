@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Dict
+from typing import List, Dict, Set
 from collections import deque
 
 INPUT_FILE = "input.txt"
@@ -15,10 +15,59 @@ class Bag:
 
 
 class BagAnalyzer:
-    def __init__(self, allBagsToContent):
+    def __init__(self, allBagsToContent: Dict[Bag, List[Dict[str, int]]]):
         self.allBagsToContent = allBagsToContent
+        self.bagColorToContainingBags: Dict[str, Set[Bag]] = dict()
 
-    def getAllBagsContainingTargetColoredBagRecursively(self, targetColor):
+    def countAllBagsInsideTargetColoredBag(self, targetColor: str) -> int:
+        targetBag = self._getBagByColor(targetColor)
+        return self._countBagsInsideBag(targetBag, 1) - 1
+
+    def countBagsContainingTargetColoredBagRecursively(self, targetColor: str) -> int:
+        if not self.bagColorToContainingBags:
+            raise ValueError("Bag colors not analyzed yet.")
+
+        if targetColor not in self.bagColorToContainingBags:
+            raise ValueError("No bag with target color found inside any bag.")
+
+        return len(self.bagColorToContainingBags[targetColor])
+
+    def findAllContentBagColorsToContainingBags(self) -> None:
+        allContentBagColors = self._findAllContentBagColors()
+        for bagColor in allContentBagColors:
+            self.bagColorToContainingBags[bagColor] = self._getAllBagsContainingTargetColoredBagRecursively(bagColor)
+
+    def _getBagByColor(self, color: str) -> Bag:
+        for bag in self.allBagsToContent:
+            if bag.color == color:
+                return bag
+        raise ValueError("No bag with such color found.")
+
+    def _countBagsInsideBag(self, bag: Bag, bagQuantity: int) -> int:
+        allBagsCount = bagQuantity
+        for nodeData in bag.content:
+            for color, quantity in nodeData.items():
+                nextBag = self._getBagByColor(color)
+                allBagsCount += self._countBagsInsideBag(nextBag, bagQuantity * quantity)
+        return allBagsCount
+
+    def _getBagsContainingTargetDirectly(self, targetBagColor: str) -> List[Bag]:
+        bagsContainingTargetDirectly = []
+        for bag in self.allBagsToContent:
+            for bagColors in bag.content:
+                if targetBagColor in bagColors:
+                    bagsContainingTargetDirectly.append(bag)
+        return bagsContainingTargetDirectly
+
+    def _findAllContentBagColors(self) -> Set[str]:
+        allBagColors = set()
+        for bag, content in self.allBagsToContent.items():
+            for contentColorsToQuantities in content:
+                for contentColor in contentColorsToQuantities.keys():
+                    allBagColors.add(contentColor)
+        return allBagColors
+
+    def _getAllBagsContainingTargetColoredBagRecursively(self, targetColor: str) -> Set[Bag]:
         bagsContainingTargetDirectly: List[Bag] = self._getBagsContainingTargetDirectly(targetColor)
 
         bagsContainingTargetBagRecursively = set(bagsContainingTargetDirectly)
@@ -38,37 +87,10 @@ class BagAnalyzer:
                         bagsContainingTargetBagRecursively.add(bag)
                         bagsToVisit.appendleft(bag)
             visitedBags.add(currentBag)
-
-        return len(bagsContainingTargetBagRecursively)
-
-    def countAllBagsInsideTargetColoredBag(self, targetColor):
-        targetBag = self._getBagByColor(targetColor)
-        return self._countBagsInsideBag(targetBag, 1) - 1
-
-    def _getBagByColor(self, color):
-        for bag in self.allBagsToContent:
-            if bag.color == color:
-                return bag
-        raise ValueError("No bag with such color found.")
-
-    def _countBagsInsideBag(self, bag, bagQuantity):
-        allBagsCount = bagQuantity
-        for nodeData in bag.content:
-            for color, quantity in nodeData.items():
-                nextBag = self._getBagByColor(color)
-                allBagsCount += self._countBagsInsideBag(nextBag, bagQuantity * quantity)
-        return allBagsCount
-
-    def _getBagsContainingTargetDirectly(self, targetBagColor):
-        bagsContainingTargetDirectly = []
-        for bag in self.allBagsToContent:
-            for bagColors in bag.content:
-                if targetBagColor in bagColors:
-                    bagsContainingTargetDirectly.append(bag)
-        return bagsContainingTargetDirectly
+        return bagsContainingTargetBagRecursively
 
 
-def getInput(inputFile):
+def getInput(inputFile: str) -> Dict[Bag, List[Dict[str, int]]]:
     allBagsToContents = {}
     with open(inputFile, "r") as inputFile:
         lines = inputFile.readlines()
@@ -81,7 +103,7 @@ def getInput(inputFile):
     return allBagsToContents
 
 
-def createBagFromLine(line: List):
+def createBagFromLine(line: List[str]) -> Bag:
     # Line format should be like "wavy maroon bags contain 2 dull magenta bags, 3 dark red bags, 5 dull green bags, 4 bright turquoise bags."
     # Format: two adjectives (to describe the main bag's color) + word "bags" + word "contain" + numeral quantity of inside bags + two adjectives (for these inside bags' color) + word "bags"
     # More inside bags could be mentioned in the same sentence, they all have the above mentioned description format
@@ -113,7 +135,8 @@ def main():
     bagAnalyzer = BagAnalyzer(allBags)
     target = SHINY_GOLD
 
-    allBagsContainingTarget = bagAnalyzer.getAllBagsContainingTargetColoredBagRecursively(target)
+    bagAnalyzer.findAllContentBagColorsToContainingBags()
+    allBagsContainingTarget = bagAnalyzer.countBagsContainingTargetColoredBagRecursively(target)
     print(allBagsContainingTarget)  # 229
 
     allBagsCountInTarget = bagAnalyzer.countAllBagsInsideTargetColoredBag(target)
@@ -124,8 +147,9 @@ class BagsCounterTest(unittest.TestCase):
     def test_getAllBagsContainingTargetRecursively_correctBagsNumReturned(self):
         allBags = getInput(TEST_INPUT_FILE_SHORT)
         bagAnalyzer = BagAnalyzer(allBags)
+        bagAnalyzer.findAllContentBagColorsToContainingBags()
         targetColor = SHINY_GOLD
-        numAllBagsContainingTargetColoredBag = bagAnalyzer.getAllBagsContainingTargetColoredBagRecursively(
+        numAllBagsContainingTargetColoredBag = bagAnalyzer.countBagsContainingTargetColoredBagRecursively(
             targetColor)
         self.assertEqual(4, numAllBagsContainingTargetColoredBag)
 
