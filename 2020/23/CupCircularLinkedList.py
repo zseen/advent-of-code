@@ -1,5 +1,4 @@
-from typing import Optional
-from CupNode import CupNode
+from typing import Optional, Dict
 
 
 class CupCircularLinkedList:
@@ -7,9 +6,27 @@ class CupCircularLinkedList:
         self._headCup: Optional[CupNode] = None
         self._tailCup: Optional[CupNode] = None
         self._cupsCount: int = 0
+        self._cupLabelToCup: Optional[Dict[int, CupNode]] = None
+
+    class CupNode:
+        def __init__(self, label: int) -> None:
+            self.label: int = label
+            self.nextCup: Optional[CupNode] = None
+            self.previousCup: Optional[CupNode] = None
 
     def getHeadCup(self) -> CupNode:
         return self._headCup
+
+    def getCupLabelToCup(self) -> Dict[int, CupNode]:
+        self._findCupLabelToCup()
+        assert self._cupLabelToCup
+        return self._cupLabelToCup
+
+    def getNextCupOfCup(self, cupToGetNextCupOf: CupNode) -> CupNode:
+        return cupToGetNextCupOf.nextCup
+
+    def getPreviousCupOfCup(self, cupToGetPreviousCupOf: CupNode) -> CupNode:
+        return cupToGetPreviousCupOf.previousCup
 
     def __iter__(self) -> CupNode:
         if self._headCup is None:
@@ -17,32 +34,32 @@ class CupCircularLinkedList:
         currentCup: CupNode = self._headCup
         for i in range(self._cupsCount):
             yield currentCup
-            currentCup = currentCup.getNextCup()
+            currentCup = currentCup.nextCup
 
-    def addCup(self, cupToAdd: CupNode) -> None:
+    def append(self, cupToAdd: CupNode) -> None:
         if not self._headCup:
             self._headCup = cupToAdd
             self._tailCup = cupToAdd
         else:
-            self._tailCup.setNextCup(cupToAdd)
-            cupToAdd.setPreviousCup(self._tailCup)
+            self._tailCup.nextCup = cupToAdd
+            cupToAdd.previousCup = self._tailCup
             self._tailCup = cupToAdd
-            self._tailCup.setNextCup(self._headCup)
+            self._tailCup.nextCup = self._headCup
         self._cupsCount += 1
 
     def removeCup(self, cupToRemove: CupNode) -> None:
-        previousCup = cupToRemove.getPreviousCup()
-        nextCup = cupToRemove.getNextCup()
-        previousCup.setNextCup(nextCup)
-        nextCup.setPreviousCup(previousCup)
+        previousCup = cupToRemove.previousCup
+        nextCup = cupToRemove.nextCup
+        previousCup.nextCup = nextCup
+        nextCup.previousCup = previousCup
         self._cupsCount -= 1
 
     def insertCupAfterSpecificCup(self, cupToInsertAfter: CupNode, cupToInsert: CupNode) -> None:
-        currentCupToInsertAfterNextCup = cupToInsertAfter.getNextCup()
-        cupToInsertAfter.setNextCup(cupToInsert)
-        cupToInsert.setPreviousCup(cupToInsertAfter)
-        currentCupToInsertAfterNextCup.setPreviousCup(cupToInsert)
-        cupToInsert.setNextCup(currentCupToInsertAfterNextCup)
+        currentCupToInsertAfterNextCup = cupToInsertAfter.nextCup
+        cupToInsertAfter.nextCup = cupToInsert
+        cupToInsert.previousCup = cupToInsertAfter
+        currentCupToInsertAfterNextCup.previousCup = cupToInsert
+        cupToInsert.nextCup = currentCupToInsertAfterNextCup
         self._cupsCount += 1
 
     def rotateUntilDesiredHeadLabel(self, desiredHeadLabel: int) -> None:
@@ -54,5 +71,13 @@ class CupCircularLinkedList:
 
     def rotate(self) -> None:
         currentHeadCup = self._headCup
-        self._headCup = self._headCup.getNextCup()
+        self._headCup = self._headCup.nextCup
         self._tailCup = currentHeadCup
+
+    def _findCupLabelToCup(self) -> None:
+        labelToCup: Dict[int, CupNode] = dict()
+        currentCup = self._headCup
+        for _ in range(self._cupsCount):
+            labelToCup[currentCup.label] = currentCup
+            currentCup = currentCup.nextCup
+        self._cupLabelToCup = labelToCup

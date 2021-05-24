@@ -1,8 +1,9 @@
 import unittest
 from typing import List, Set, Dict, Optional
 from Profiling import doProfiling
-from CupNode import CupNode
 from CupCircularLinkedList import CupCircularLinkedList
+
+CupNode = CupCircularLinkedList.CupNode
 
 TEST_INPUT = "test_input.txt"
 INPUT_FILE = "input.txt"
@@ -20,8 +21,8 @@ class CrabCups:
         self.cups: Cups = cups
         self.currentCup: Optional[CupNode] = None
         self.destinationCup: Optional[CupNode] = None
-        self.cupsLabels: Set[int] = set()
-        self.cupLabelToCup: Dict[int, CupNode] = self._getCupLabelsToCup()
+        self.cupLabelToCup: Dict[int, CupNode] = self.cups.getCupLabelToCup()
+        self.maxCupLabel: Optional[int] = len(self.cupLabelToCup)
         self.pickedOutCups: List[CupNode] = []
 
     def play(self) -> None:
@@ -40,22 +41,21 @@ class CrabCups:
         currentCup = self.currentCup
 
         for _ in range(0, CUPS_TO_PICK_OUT_COUNT):
-            currentCup = currentCup.getNextCup()
+            currentCup = self.cups.getNextCupOfCup(currentCup)
             self.pickedOutCups.append(currentCup)
             self.cups.removeCup(currentCup)
 
     def _findDestinationCup(self) -> None:
         destinationCupLabelCandidate = self.currentCup.label - 1
         pickedOutCupsLabels = set([cup.label for cup in self.pickedOutCups])
-        while destinationCupLabelCandidate >= 0:
-            if (destinationCupLabelCandidate in self.cupsLabels) and (destinationCupLabelCandidate not in pickedOutCupsLabels):
-                self.destinationCup = self.cupLabelToCup[destinationCupLabelCandidate]
-                break
-            destinationCupLabelCandidate -= 1
-            if destinationCupLabelCandidate <= 0:
-                destinationCupLabelCandidate = len(self.cupsLabels)
 
-        assert self.destinationCup
+        while True:
+            if destinationCupLabelCandidate == 0:
+                destinationCupLabelCandidate = self.maxCupLabel
+            if destinationCupLabelCandidate not in pickedOutCupsLabels:
+                self.destinationCup = self.cupLabelToCup[destinationCupLabelCandidate]
+                return
+            destinationCupLabelCandidate -= 1
 
     def _putPickedOutCupsNextToDestinationCup(self) -> None:
         assert len(self.pickedOutCups) == CUPS_TO_PICK_OUT_COUNT
@@ -64,14 +64,7 @@ class CrabCups:
         for i in range(0, CUPS_TO_PICK_OUT_COUNT):
             cupToVisitInPickedOutCups = self.pickedOutCups.pop(0)
             self.cups.insertCupAfterSpecificCup(cupToVisitInOriginalCups, cupToVisitInPickedOutCups)
-            cupToVisitInOriginalCups = cupToVisitInOriginalCups.getNextCup()
-
-    def _getCupLabelsToCup(self) -> Dict[int, CupNode]:
-        labelToCup: Dict[int, CupNode] = dict()
-        for cup in self.cups:
-            labelToCup[cup.label] = cup
-            self.cupsLabels.add(cup.label)
-        return labelToCup
+            cupToVisitInOriginalCups = self.cups.getNextCupOfCup(cupToVisitInOriginalCups)
 
 
 def getInput(fileName: str) -> List[int]:
@@ -80,7 +73,7 @@ def getInput(fileName: str) -> List[int]:
         return [int(cupLabel) for cupLabel in cupsRawData.strip()]
 
 
-def setUpAndPlayWholeCrabCupsMatch(cupLabels: List[int], roundsToPlay: int) -> CrabCups:
+def setUpAndPlayWholeCrabCupsGame(cupLabels: List[int], roundsToPlay: int) -> CrabCups:
     cups: Cups = createCupsFromLabels(cupLabels)
     crabCups: CrabCups = CrabCups(cups)
     runGame(crabCups, roundsToPlay)
@@ -91,7 +84,7 @@ def setUpAndPlayWholeCrabCupsMatch(cupLabels: List[int], roundsToPlay: int) -> C
 def createCupsFromLabels(cupLabels: List[int]) -> CupCircularLinkedList:
     cupsLinkedList: CupCircularLinkedList = CupCircularLinkedList()
     for label in cupLabels:
-        cupsLinkedList.addCup(CupNode(label))
+        cupsLinkedList.append(CupNode(label))
     return cupsLinkedList
 
 
@@ -112,12 +105,13 @@ def main():
     print("".join(map(str, [cup.label for cup in crabCupsAfterMatch.cups]))[1:])  # "58427369"
 
     addMoreCupLabelsUntilLimitInclusive(cupLabels, CUPS_NUM_PART_TWO)
-    crabCupsAfterMatch = setUpAndPlayWholeCrabCupsMatch(cupLabels, ROUNDS_TO_PLAY_PART_TWO)
-    print(
-        crabCupsAfterMatch.cupLabelToCup[1].getNextCup().label * crabCupsAfterMatch.cupLabelToCup[1].getNextCup().getNextCup().label)  # 111057672960
+    crabCupsAfterGame = setUpAndPlayWholeCrabCupsGame(cupLabels, ROUNDS_TO_PLAY_PART_TWO)
+    numberOneCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(crabCupsAfterGame.cupLabelToCup[1])
+    numberOneCupNextCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(numberOneCupNextCup)
+    print(numberOneCupNextCup.label * numberOneCupNextCupNextCup.label)  # 111057672960
 
     if DO_PROFILING:
-        doProfiling(setUpAndPlayWholeCrabCupsMatch, cupLabels, ROUNDS_TO_PLAY_PART_TWO)
+        doProfiling(setUpAndPlayWholeCrabCupsGame, cupLabels, ROUNDS_TO_PLAY_PART_TWO)
 
 
 class CrabCupsTester(unittest.TestCase):
@@ -125,14 +119,15 @@ class CrabCupsTester(unittest.TestCase):
         self.cupLabels = getInput(TEST_INPUT)
 
     def test_fewerCupsAndRounds_cupsLabelsAfterCupOneReturned(self):
-        crabCupsAfterMatch = setUpAndPlayWholeCrabCupsMatch(self.cupLabels, ROUNDS_TO_PLAY_PART_ONE)
-        self.assertEqual("".join(map(str, [cup.label for cup in crabCupsAfterMatch.cups]))[1:], "67384529")
+        crabCupsAfterGame = setUpAndPlayWholeCrabCupsGame(self.cupLabels, ROUNDS_TO_PLAY_PART_ONE)
+        self.assertEqual("".join(map(str, [cup.label for cup in crabCupsAfterGame.cups]))[1:], "67384529")
 
     def test_moreCupsAndRounds_twoCupsLabelsAfterCupOneMultipledTogetherReturned(self):
         addMoreCupLabelsUntilLimitInclusive(self.cupLabels, CUPS_NUM_PART_TWO)
-        crabCupsAfterMatch = setUpAndPlayWholeCrabCupsMatch(self.cupLabels, ROUNDS_TO_PLAY_PART_TWO)
-        self.assertEqual(crabCupsAfterMatch.cupLabelToCup[1].getNextCup().label * crabCupsAfterMatch.cupLabelToCup[1].getNextCup().getNextCup().label,
-                         149245887792)
+        crabCupsAfterGame = setUpAndPlayWholeCrabCupsGame(self.cupLabels, ROUNDS_TO_PLAY_PART_TWO)
+        numberOneCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(crabCupsAfterGame.cupLabelToCup[1])
+        numberOneCupNextCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(numberOneCupNextCup)
+        self.assertEqual(numberOneCupNextCup.label * numberOneCupNextCupNextCup.label, 149245887792)
 
 
 if __name__ == '__main__':
