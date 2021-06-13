@@ -44,7 +44,8 @@ def main():
     cardPublicKey, doorPublicKey = getInput(INPUT_FILE)
     card = DeviceEncrypter(cardPublicKey)
     door = DeviceEncrypter(doorPublicKey)
-    print(door.calculateEncryptionKey(card.calculateLoopSize()))  # 16311885 (equal to the card's encryption key)
+    cardLoopSize = card.calculateLoopSize()
+    print(door.calculateEncryptionKey(cardLoopSize))  # 16311885 (equal to the card's encryption key)
 
 
 class ComboBreakerTester(unittest.TestCase):
