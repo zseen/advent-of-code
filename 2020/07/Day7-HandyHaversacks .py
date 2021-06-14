@@ -106,7 +106,7 @@ def getInput(inputFile: str) -> Dict[Bag, List[Dict[str, int]]]:
 def createBagFromLine(line: List[str]) -> Bag:
     # Line format should be like "wavy maroon bags contain 2 dull magenta bags, 3 dark red bags, 5 dull green bags, 4 bright turquoise bags."
     # Format: two adjectives (to describe the main bag's color) + word "bags" + word "contain" + numeral quantity of inside bags + two adjectives (for these inside bags' color) + word "bags"
-    # More inside bags could be mentioned in the same sentence, they all have the above mentioned description format
+    # More inside bags could be contained in the same sentence, they all have the above mentioned description format
 
     if len(line) < 3:
         raise ValueError("Invalid line format - line is too short.")

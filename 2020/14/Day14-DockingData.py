@@ -70,9 +70,7 @@ class MaskingHandler:
         return int(maskedBinaryMemoryAddress.replace('X', '0'), 2)
 
     def _getXPositionsInMask(self) -> List[int]:
-        # return [(MASK_LENGTH - 1 - i) for i in range(0, MASK_LENGTH) if self._mask[i] == "X"]
-        # I am not sure that the new version is actually any easier to understand
-        return [(MASK_LENGTH - 1 - i) for i in range(MASK_LENGTH - 1, -1, -1) if self._mask[i] == "X"]
+        return [(MASK_LENGTH - 1 - i) for i in range(0, MASK_LENGTH) if self._mask[i] == "X"]
 
     def _generateMaskedMemoryAddresses(self, smallestPossibleNumFromMaskedMemoryAddress: int, numsToCombineAndAddToSmallestPossibleNum: List[int]) -> \
             List[int]:
