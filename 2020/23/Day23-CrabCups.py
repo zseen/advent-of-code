@@ -21,7 +21,7 @@ class CrabCups:
         self.cups: Cups = cups
         self.currentCup: Optional[CupNode] = None
         self.destinationCup: Optional[CupNode] = None
-        self.cupLabelToCup: Dict[int, CupNode] = self.cups.getCupLabelToCup()
+        self.cupLabelToCup: Dict[int, CupNode] = self.cups.findCupLabelToCup()
         self.maxCupLabel: Optional[int] = len(self.cupLabelToCup)
         self.pickedOutCups: List[CupNode] = []
 
@@ -98,17 +98,20 @@ def addMoreCupLabelsUntilLimitInclusive(cupLabels: List[int], limit: int) -> Non
         cupLabels.append(i)
 
 
+def playMatchWithExtendedCups(cupLabels: List[int]) -> int:
+    addMoreCupLabelsUntilLimitInclusive(cupLabels, CUPS_NUM_PART_TWO)
+    crabCupsAfterGame = setUpAndPlayWholeCrabCupsGame(cupLabels, ROUNDS_TO_PLAY_PART_TWO)
+    numberOneCupNext = crabCupsAfterGame.cups.getNextCupOfCup(crabCupsAfterGame.cupLabelToCup[1])
+    numberOneCupNextNext = crabCupsAfterGame.cups.getNextCupOfCup(numberOneCupNext)
+    return numberOneCupNext.label * numberOneCupNextNext.label
+
+
 def main():
     cupLabels = getInput(INPUT_FILE)
 
     crabCupsAfterMatch = setUpAndPlayWholeCrabCupsMatch(cupLabels, ROUNDS_TO_PLAY_PART_ONE)
     print("".join(map(str, [cup.label for cup in crabCupsAfterMatch.cups]))[1:])  # "58427369"
-
-    addMoreCupLabelsUntilLimitInclusive(cupLabels, CUPS_NUM_PART_TWO)
-    crabCupsAfterGame = setUpAndPlayWholeCrabCupsGame(cupLabels, ROUNDS_TO_PLAY_PART_TWO)
-    numberOneCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(crabCupsAfterGame.cupLabelToCup[1])
-    numberOneCupNextCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(numberOneCupNextCup)
-    print(numberOneCupNextCup.label * numberOneCupNextCupNextCup.label)  # 111057672960
+    print(playMatchWithExtendedCups(cupLabels))  # 111057672960
 
     if DO_PROFILING:
         doProfiling(setUpAndPlayWholeCrabCupsGame, cupLabels, ROUNDS_TO_PLAY_PART_TWO)
@@ -123,11 +126,7 @@ class CrabCupsTester(unittest.TestCase):
         self.assertEqual("".join(map(str, [cup.label for cup in crabCupsAfterGame.cups]))[1:], "67384529")
 
     def test_moreCupsAndRounds_twoCupsLabelsAfterCupOneMultipledTogetherReturned(self):
-        addMoreCupLabelsUntilLimitInclusive(self.cupLabels, CUPS_NUM_PART_TWO)
-        crabCupsAfterGame = setUpAndPlayWholeCrabCupsGame(self.cupLabels, ROUNDS_TO_PLAY_PART_TWO)
-        numberOneCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(crabCupsAfterGame.cupLabelToCup[1])
-        numberOneCupNextCupNextCup = crabCupsAfterGame.cups.getNextCupOfCup(numberOneCupNextCup)
-        self.assertEqual(numberOneCupNextCup.label * numberOneCupNextCupNextCup.label, 149245887792)
+        self.assertEqual(playMatchWithExtendedCups(self.cupLabels), 149245887792)
 
 
 if __name__ == '__main__':

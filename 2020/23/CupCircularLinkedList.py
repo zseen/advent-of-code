@@ -6,7 +6,6 @@ class CupCircularLinkedList:
         self._headCup: Optional[CupNode] = None
         self._tailCup: Optional[CupNode] = None
         self._cupsCount: int = 0
-        self._cupLabelToCup: Optional[Dict[int, CupNode]] = None
 
     class CupNode:
         def __init__(self, label: int) -> None:
@@ -17,16 +16,19 @@ class CupCircularLinkedList:
     def getHeadCup(self) -> CupNode:
         return self._headCup
 
-    def getCupLabelToCup(self) -> Dict[int, CupNode]:
-        self._findCupLabelToCup()
-        assert self._cupLabelToCup
-        return self._cupLabelToCup
-
     def getNextCupOfCup(self, cupToGetNextCupOf: CupNode) -> CupNode:
         return cupToGetNextCupOf.nextCup
 
     def getPreviousCupOfCup(self, cupToGetPreviousCupOf: CupNode) -> CupNode:
         return cupToGetPreviousCupOf.previousCup
+
+    def findCupLabelToCup(self) -> Dict[int, CupNode]:
+        labelToCup: Dict[int, CupNode] = dict()
+        currentCup = self._headCup
+        for _ in range(self._cupsCount):
+            labelToCup[currentCup.label] = currentCup
+            currentCup = currentCup.nextCup
+        return labelToCup
 
     def __iter__(self) -> CupNode:
         if self._headCup is None:
@@ -48,10 +50,13 @@ class CupCircularLinkedList:
         self._cupsCount += 1
 
     def removeCup(self, cupToRemove: CupNode) -> None:
-        previousCup = cupToRemove.previousCup
-        nextCup = cupToRemove.nextCup
-        previousCup.nextCup = nextCup
-        nextCup.previousCup = previousCup
+        if self._cupsCount == 1:
+            self._headCup, self._tailCup = None, None
+        else:
+            previousCup = cupToRemove.previousCup
+            nextCup = cupToRemove.nextCup
+            previousCup.nextCup = nextCup
+            nextCup.previousCup = previousCup
         self._cupsCount -= 1
 
     def insertCupAfterSpecificCup(self, cupToInsertAfter: CupNode, cupToInsert: CupNode) -> None:
@@ -73,11 +78,3 @@ class CupCircularLinkedList:
         currentHeadCup = self._headCup
         self._headCup = self._headCup.nextCup
         self._tailCup = currentHeadCup
-
-    def _findCupLabelToCup(self) -> None:
-        labelToCup: Dict[int, CupNode] = dict()
-        currentCup = self._headCup
-        for _ in range(self._cupsCount):
-            labelToCup[currentCup.label] = currentCup
-            currentCup = currentCup.nextCup
-        self._cupLabelToCup = labelToCup
